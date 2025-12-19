@@ -67,6 +67,7 @@ func (db *DB) MigrateUp(ctx context.Context) error {
 			return fmt.Errorf("failed to read migration %s: %w", file, err)
 		}
 
+		// TODO: validate if migration file has content
 		sql := extractUpMigration(string(content))
 
 		tx, err := db.Pool.Begin(ctx)

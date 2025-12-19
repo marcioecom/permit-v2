@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -10,24 +13,24 @@ import (
 	"github.com/marcioecom/permit/internal/config"
 	"github.com/marcioecom/permit/internal/database"
 	"github.com/marcioecom/permit/internal/handler"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	// TODO: replace panic with proper error handling
 	cfg, err := config.Load()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("failed to load config")
 	}
 
 	ctx := context.Background()
 	db, err := database.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 	defer db.Close()
 
 	if err = db.MigrateUp(ctx); err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("failed to apply pending migrations")
 	}
 
 	r := chi.NewRouter()

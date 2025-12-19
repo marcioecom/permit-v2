@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/marcioecom/permit/internal/config"
 	"github.com/marcioecom/permit/internal/database"
+	"github.com/rs/zerolog/log"
 )
 
 type Options struct {
@@ -25,20 +25,20 @@ func main() {
 	// Parse flags
 	if _, err := optsParser.Parse(); err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type != flags.ErrHelp {
-			fmt.Printf("Failed to parse args, err:\n%s\n", err)
+			log.Err(err).Msg("Failed to parse args")
 		}
 		os.Exit(0)
 	}
 
 	cfg, err := config.Load()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("failed to load config")
 	}
 
 	ctx := context.Background()
 	db, err := database.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
 	switch {
@@ -51,6 +51,6 @@ func main() {
 	}
 
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 }
