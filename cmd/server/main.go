@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	// TODO: replace panic with proper error handling
 	cfg, err := config.Load()
 	if err != nil {
 		panic(err)
@@ -24,6 +25,10 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
+
+	if err = db.MigrateUp(ctx); err != nil {
+		panic(err)
+	}
 
 	r := chi.NewRouter()
 

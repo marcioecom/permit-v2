@@ -35,6 +35,6 @@ func New(ctx context.Context, dsn string) (*DB, error) {
 	return &DB{Pool: pool}, nil
 }
 
-func (d *DB) Close() {
-	d.Pool.Close()
+func (db *DB) Close() {
+	db.Pool.Close()
 }
