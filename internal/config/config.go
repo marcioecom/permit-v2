@@ -9,6 +9,7 @@ import (
 )
 
 type Config struct {
+	Port        string
 	DatabaseURL string
 }
 
@@ -16,6 +17,7 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	config := &Config{
+		Port:        getEnv("PORT", "8080"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 	}
 
@@ -38,4 +40,11 @@ func (c *Config) validate() error {
 	}
 
 	return nil
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

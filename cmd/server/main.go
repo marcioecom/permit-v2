@@ -43,6 +43,33 @@ func main() {
 
 	handler.SetupRoutes(r)
 
-	println("Server is running on port 3000")
-	_ = http.ListenAndServe(":3000", r)
+	server := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	go func() {
+		log.Info().Msgf("Server starting on port %s", cfg.Port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal().Msgf("server failed: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info().Msg("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal().Msgf("Server forced to shutdown: %v", err)
+	}
+
+	log.Info().Msg("Server stopped gracefully")
 }
