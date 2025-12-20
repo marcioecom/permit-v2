@@ -51,6 +51,6 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to database")
+		log.Fatal().Err(err).Msg("failed to run migrate script")
 	}
 }
