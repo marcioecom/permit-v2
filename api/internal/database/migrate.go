@@ -42,18 +42,10 @@ func (db *DB) MigrateUp(ctx context.Context) error {
 	}
 
 	// Get migration files
-	entries, err := fs.ReadDir(migrationsFS, "migrations")
+	files, err := getMigrationFiles()
 	if err != nil {
-		return fmt.Errorf("failed to read migrations directory: %w", err)
+		return fmt.Errorf("failed to get migration files: %w", err)
 	}
-
-	var files []string
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
-			files = append(files, entry.Name())
-		}
-	}
-	sort.Strings(files)
 
 	// Apply pending migrations
 	for _, file := range files {
@@ -67,8 +59,10 @@ func (db *DB) MigrateUp(ctx context.Context) error {
 			return fmt.Errorf("failed to read migration %s: %w", file, err)
 		}
 
-		// TODO: validate if migration file has content
-		sql := extractUpMigration(string(content))
+		sql := extractUpMigration(string(content), up)
+		if len(content) == 0 || len(sql) == 0 {
+			return fmt.Errorf("migration file empty or without migration up section")
+		}
 
 		tx, err := db.Pool.Begin(ctx)
 		if err != nil {
@@ -95,7 +89,58 @@ func (db *DB) MigrateUp(ctx context.Context) error {
 	return nil
 }
 
-func (db *DB) MigrateDown(ctx context.Context) error { return nil }
+func (db *DB) MigrateDown(ctx context.Context) error {
+	var version string
+	row := db.Pool.QueryRow(ctx, "SELECT version FROM schema_migrations ORDER BY version DESC")
+	if err := row.Scan(&version); err != nil {
+		return fmt.Errorf("failed to query migrations: %w", err)
+	}
+
+	files, err := getMigrationFiles()
+	if err != nil {
+		return fmt.Errorf("failed to get migration files: %w", err)
+	}
+
+	for _, file := range files {
+		fileVersion := strings.TrimSuffix(file, ".sql")
+		if fileVersion != version {
+			continue
+		}
+
+		content, err := fs.ReadFile(migrationsFS, filepath.Join("migrations", file))
+		if err != nil {
+			return fmt.Errorf("failed to read migration %s: %w", file, err)
+		}
+
+		sql := extractUpMigration(string(content), down)
+		if len(content) == 0 || len(sql) == 0 {
+			return fmt.Errorf("migration file empty or without migration down section")
+		}
+
+		tx, err := db.Pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction for %s: %w", file, err)
+		}
+
+		if _, err := tx.Exec(ctx, sql); err != nil {
+			tx.Rollback(ctx)
+			return fmt.Errorf("failed to execute migration %s: %w", file, err)
+		}
+
+		if _, err := tx.Exec(ctx, "DELETE FROM schema_migrations WHERE version = $1", version); err != nil {
+			tx.Rollback(ctx)
+			return fmt.Errorf("failed to record migration %s: %w", file, err)
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			return fmt.Errorf("failed to commit migration %s: %w", file, err)
+		}
+
+		fmt.Printf("Applied down migration: %s\n", file)
+	}
+
+	return nil
+}
 
 func (db *DB) MigrateShow(ctx context.Context) error {
 	rows, err := db.Pool.Query(ctx, "SELECT version FROM schema_migrations ORDER BY version")
@@ -114,18 +159,10 @@ func (db *DB) MigrateShow(ctx context.Context) error {
 		applied[version] = true
 	}
 
-	entries, err := fs.ReadDir(migrationsFS, "migrations")
+	files, err := getMigrationFiles()
 	if err != nil {
-		return fmt.Errorf("failed to read migrations directory: %w", err)
+		return fmt.Errorf("failed to get migration files: %w", err)
 	}
-
-	var files []string
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
-			files = append(files, entry.Name())
-		}
-	}
-	sort.Strings(files)
 
 	for _, file := range files {
 		version := strings.TrimSuffix(file, ".sql")
@@ -140,20 +177,56 @@ func (db *DB) MigrateShow(ctx context.Context) error {
 	return nil
 }
 
-func extractUpMigration(content string) string {
+type direction string
+
+var (
+	up   direction = "UP"
+	down direction = "DOWN"
+)
+
+func extractUpMigration(content string, direction direction) string {
 	// Find +migrate Up section
 	upIdx := strings.Index(content, "-- +migrate Up")
 	downIdx := strings.Index(content, "-- +migrate Down")
 
-	if upIdx == -1 {
-		return content
+	var start, end int
+
+	if direction == up {
+		if upIdx == -1 {
+			return content
+		}
+
+		start = upIdx + len("-- +migrate Up")
+		end = len(content)
+		if downIdx != -1 && downIdx > upIdx {
+			end = downIdx
+		}
 	}
 
-	start := upIdx + len("-- +migrate Up")
-	end := len(content)
-	if downIdx != -1 && downIdx > upIdx {
-		end = downIdx
+	if direction == down {
+		if downIdx == -1 {
+			return content
+		}
+
+		start = downIdx + len("-- +migrate Down")
+		end = len(content)
 	}
 
 	return strings.TrimSpace(content[start:end])
+}
+
+func getMigrationFiles() ([]string, error) {
+	entries, err := fs.ReadDir(migrationsFS, "migrations")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read migrations directory: %w", err)
+	}
+
+	var files []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
+			files = append(files, entry.Name())
+		}
+	}
+	sort.Strings(files)
+	return files, nil
 }
