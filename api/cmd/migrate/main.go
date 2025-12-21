@@ -14,6 +14,7 @@ type Options struct {
 	Up   bool `short:"u" long:"up" description:"Run all migrations"`
 	Down bool `short:"d" long:"down" description:"Rollback all migrations"`
 	Show bool `short:"s" long:"show" description:"Show all migrations"`
+	Seed bool `long:"seed" description:"Run all seeds"`
 }
 
 var (
@@ -48,6 +49,8 @@ func main() {
 		err = db.MigrateDown(ctx)
 	case opts.Show:
 		err = db.MigrateShow(ctx)
+	case opts.Seed:
+		err = db.Seed(ctx, cfg)
 	}
 
 	if err != nil {

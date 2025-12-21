@@ -5,12 +5,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Port        string
-	DatabaseURL string
+	Port        string `validate:"required"`
+	DatabaseURL string `validate:"required"`
+	AdminEmail  string `validate:"required"`
 }
 
 func Load() (*Config, error) {
@@ -18,7 +20,8 @@ func Load() (*Config, error) {
 
 	config := &Config{
 		Port:        getEnv("PORT", "8080"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/permit"),
+		AdminEmail:  os.Getenv("ADMIN_EMAIL"),
 	}
 
 	if err := config.validate(); err != nil {
@@ -29,14 +32,20 @@ func Load() (*Config, error) {
 }
 
 func (c *Config) validate() error {
-	missing := []string{}
+	errors := make(map[string]string)
 
-	if c.DatabaseURL == "" {
-		missing = append(missing, "DATABASE_URL")
+	validate := validator.New()
+	if err := validate.Struct(c); err != nil {
+		for _, validationErr := range err.(validator.ValidationErrors) {
+			errors[validationErr.Field()] = fmt.Sprintf(
+				"failed '%s' tag check (value '%s' is not valid)",
+				validationErr.Tag(), validationErr.Value(),
+			)
+		}
 	}
 
-	if len(missing) > 0 {
-		return fmt.Errorf("missing required environment variables: %s", strings.Join(missing, ", "))
+	if len(errors) > 0 {
+		return fmt.Errorf("missing required environment variables: %s", prettyfy(errors))
 	}
 
 	return nil
@@ -47,4 +56,12 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func prettyfy(errFields map[string]string) string {
+	var msg strings.Builder
+	for field, error := range errFields {
+		fmt.Fprintf(&msg, "%s %s; ", field, error)
+	}
+	return msg.String()
 }

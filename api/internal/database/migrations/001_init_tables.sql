@@ -79,6 +79,18 @@ CREATE TABLE refresh_tokens (
 
 CREATE INDEX idx_refresh_token_lookup ON refresh_tokens(token_hash);
 
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_users_modtime BEFORE UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_projects_modtime BEFORE UPDATE ON projects FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_widgets_modtime BEFORE UPDATE ON widgets FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
 -- +migrate Down
 DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS otp_codes;
@@ -87,4 +99,5 @@ DROP TABLE IF EXISTS project_api_keys;
 DROP TABLE IF EXISTS project_users;
 DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS users;
+DROP FUNCTION IF EXISTS update_updated_at_column();
 
