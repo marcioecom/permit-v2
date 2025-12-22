@@ -104,7 +104,3 @@ payload:
   "token": "P1_eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 ```
-
-# Auth com email ao invés de magic link, usam code de 6 digitos
-
-# Project Permit (B2B2C - Business to Business to Consumer)
