@@ -8,8 +8,14 @@ func SetupRoutes(r *chi.Mux, health *HealthHandler, auth *AuthHandler, project *
 	r.Get("/health", health.GetHealth)
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Hello World!"))
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/otp/start", auth.OtpStart)
+			r.Post("/otp/verify", auth.OtpVerify)
+		})
+
+		r.Route("/projects", func(r chi.Router) {
+			r.Post("/", project.Create)
+			r.Get("/{id}", project.GetByID)
 		})
 	})
 }
