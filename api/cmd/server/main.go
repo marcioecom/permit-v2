@@ -13,6 +13,8 @@ import (
 	"github.com/marcioecom/permit/internal/config"
 	"github.com/marcioecom/permit/internal/database"
 	"github.com/marcioecom/permit/internal/handler"
+	"github.com/marcioecom/permit/internal/repository"
+	"github.com/marcioecom/permit/internal/service"
 	"github.com/rs/zerolog/log"
 )
 
@@ -41,7 +43,18 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
 
-	handler.SetupRoutes(r)
+	userRepo := repository.NewPostgresUserRepo(db.Pool)
+	otpRepo := repository.NewPostgresOTPCodeRepo(db.Pool)
+	projectRepo := repository.NewPostgresProjectRepo(db.Pool)
+
+	authService := service.NewAuthService(userRepo, otpRepo)
+	projectService := service.NewProjectService(projectRepo)
+
+	healthHandler := handler.NewHealthHandler(db.Pool)
+	authHandler := handler.NewAuthHandler(authService)
+	projectHandler := handler.NewProjectHandler(projectService)
+
+	handler.SetupRoutes(r, healthHandler, authHandler, projectHandler)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
