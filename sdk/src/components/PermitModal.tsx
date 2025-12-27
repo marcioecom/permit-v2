@@ -1,5 +1,21 @@
-import React, { useState } from "react";
-import type { User } from "../context/PermitContext";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { User } from "@/context/PermitContext";
+import { AnimatePresence, motion } from "framer-motion";
+import { Lock } from "lucide-react";
+import { useState } from "react";
+import { useTheme } from "./theme-provider";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
+import { GithubDark } from "./ui/svgs/githubDark";
+import { GithubLight } from "./ui/svgs/githubLight";
+import { Google } from "./ui/svgs/google";
 
 interface PermitModalProps {
   projectId: string;
@@ -19,12 +35,14 @@ export const PermitModal = ({
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { theme } = useTheme();
+
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // TODO: fetch(apiUrl + '/auth/otp/start', ...)
       console.log(`POST ${apiUrl}/auth/otp/start`, { email, projectId });
-      // await fetch(...)
       setStep("otp");
     } catch (err) {
       alert("Erro ao enviar email");
@@ -37,6 +55,7 @@ export const PermitModal = ({
     e.preventDefault();
     setLoading(true);
     try {
+      // TODO: fetch(apiUrl + '/auth/otp/verify', ...)
       console.log(`POST ${apiUrl}/auth/otp/verify`, { email, otp, projectId });
 
       const mockToken = "eyJ_fake_jwt_token";
@@ -50,84 +69,172 @@ export const PermitModal = ({
     }
   };
 
+  function showCurrentStep() {
+    if (step === "email") {
+      return (
+        <EmailFormStep
+          email={email}
+          setEmail={setEmail}
+          loading={loading}
+          handleSendEmail={handleSendEmail}
+        />
+      );
+    }
+
+    return (
+      <OTPFormStep
+        email={email}
+        otp={otp}
+        setOtp={setOtp}
+        setStep={setStep}
+        loading={loading}
+        handleVerifyOtp={handleVerifyOtp}
+      />
+    );
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg p-8 min-w-[400px] max-w-md w-full mx-4 relative shadow-2xl">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Fechar modal"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <h3 className="text-2xl font-bold text-gray-900 mb-6">
-          Entrar com Permit
-        </h3>
-
-        {step === "email" ? (
-          <form onSubmit={handleSendEmail} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? "Enviando..." : "Receber Código"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <p className="text-sm text-gray-600 mb-4">
-              Enviamos um código para <strong>{email}</strong>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex justify-center">
+            <Lock />
+          </div>
+          <DialogTitle className="text-center text-2xl mt-4">
+            Sign in to Permit
+          </DialogTitle>
+          {step === "email" && (
+            <p className="text-center text-sm text-muted-foreground">
+              Welcome to Permit! Please sign in to continue.
             </p>
-            <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                Código de Verificação
-              </label>
-              <input
-                id="otp"
-                type="text"
-                placeholder="123456"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                required
-                maxLength={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-center text-2xl tracking-widest transition-colors"
-              />
+          )}
+        </DialogHeader>
+
+        {/* Socials Login */}
+        {step === "email" && (
+          <>
+            <div className="flex justify-center gap-4 mt-4">
+              <Button variant="outline">
+                <Google /> Google
+              </Button>
+              <Button variant="outline">
+                {theme === "dark" ? <GithubDark /> : <GithubLight />}
+                GitHub
+              </Button>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? "Validando..." : "Entrar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep("email")}
-              className="w-full text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              ← Voltar
-            </button>
-          </form>
+
+            {/* Separator */}
+            <div className="flex justify-center items-center mt-2 gap-4">
+              <hr className="w-2/5 border-t border-gray-200" />
+              <p className="text-sm text-muted-foreground">or</p>
+              <hr className="w-2/5 border-t border-gray-200" />
+            </div>
+          </>
         )}
-      </div>
-    </div>
+
+        <AnimatePresence mode="wait">{showCurrentStep()}</AnimatePresence>
+
+        {/* Footer */}
+        <div className="flex justify-center mt-4">
+          <p className="text-sm text-muted-foreground">Secured by Permit</p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
+
+function EmailFormStep({
+  email,
+  setEmail,
+  loading,
+  handleSendEmail,
+}: {
+  email: string;
+  setEmail: (email: string) => void;
+  loading: boolean;
+  handleSendEmail: (e: React.FormEvent) => void;
+}) {
+  return (
+    <motion.form
+      key="email"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.2 }}
+      onSubmit={handleSendEmail}
+      className="space-y-4"
+    >
+      <div className="space-y-2">
+        <Label htmlFor="email">Email address</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="seu@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoFocus
+        />
+      </div>
+      <Button type="submit" disabled={loading} className="w-full mt-1">
+        {loading ? "Sending..." : "Continue"}
+      </Button>
+    </motion.form>
+  );
+}
+
+function OTPFormStep({
+  email,
+  // otp,
+  // setOtp,
+  setStep,
+  loading,
+  handleVerifyOtp,
+}: {
+  email: string;
+  otp: string;
+  setOtp: (otp: string) => void;
+  setStep: (step: "email" | "otp") => void;
+  loading: boolean;
+  handleVerifyOtp: (e: React.FormEvent) => void;
+}) {
+  return (
+    <motion.form
+      key="otp"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.2 }}
+      onSubmit={handleVerifyOtp}
+      className="space-y-4"
+    >
+      <p className="text-sm text-center text-muted-foreground">
+        Enviamos um código para <strong>{email}</strong>
+      </p>
+      <div className="space-y-2 flex flex-col items-center">
+        <Label htmlFor="otp">Código de Verificação</Label>
+        <InputOTP maxLength={6} id="otp">
+          <InputOTPGroup>
+            <InputOTPSlot index={0} />
+            <InputOTPSlot index={1} />
+            <InputOTPSlot index={2} />
+            <InputOTPSlot index={3} />
+            <InputOTPSlot index={4} />
+            <InputOTPSlot index={5} />
+          </InputOTPGroup>
+        </InputOTP>
+      </div>
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? "Validando..." : "Entrar"}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setStep("email")}
+        className="w-full"
+      >
+        ← Voltar
+      </Button>
+    </motion.form>
+  );
+}
