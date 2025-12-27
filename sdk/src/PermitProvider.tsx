@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { PermitContext, type User } from "./context/PermitContext";
 import { PermitModal } from "./components/PermitModal";
+import { TwindWrapper } from "./components/TwindWrapper";
 
 interface PermitConfig {
   apiUrl?: string;
@@ -57,26 +58,28 @@ export const PermitProvider = ({
   };
 
   return (
-    <PermitContext.Provider
-      value={{
-        isAuthenticated: !!user,
-        isLoading,
-        user,
-        token,
-        login,
-        logout,
-      }}
-    >
-      {children}
+    <TwindWrapper>
+      <PermitContext.Provider
+        value={{
+          isAuthenticated: !!user,
+          isLoading,
+          user,
+          token,
+          login,
+          logout,
+        }}
+      >
+        {children}
 
-      {isModalOpen && (
-        <PermitModal
-          projectId={projectId}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={handleLoginSuccess}
-          apiUrl={config?.apiUrl || "http://localhost:8080/api/v1"}
-        />
-      )}
-    </PermitContext.Provider>
+        {isModalOpen && (
+          <PermitModal
+            projectId={projectId}
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={handleLoginSuccess}
+            apiUrl={config?.apiUrl || "http://localhost:8080/api/v1"}
+          />
+        )}
+      </PermitContext.Provider>
+    </TwindWrapper>
   );
 };

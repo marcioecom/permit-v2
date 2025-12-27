@@ -1,0 +1,27 @@
+{
+  "name": "permit-v2-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Permit - Auth as a Service",
+  "scripts": {
+    "dev": "pnpm --parallel --stream dev",
+    "dev:playground": "pnpm --filter playground dev",
+    "dev:sdk": "pnpm --filter @permit/react dev",
+    "dev:api": "cd api && go run cmd/server/main.go",
+    "build": "pnpm --recursive build",
+    "build:sdk": "pnpm --filter @permit/react build",
+    "build:playground": "pnpm --filter playground build",
+    "typecheck": "pnpm --recursive typecheck",
+    "clean": "pnpm --recursive clean"
+  },
+  "keywords": ["auth", "authentication", "permit"],
+  "author": "Permit",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
