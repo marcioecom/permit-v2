@@ -23,7 +23,8 @@
     /* Path mapping for workspace */
     "baseUrl": ".",
     "paths": {
-      "@permit/react": ["../sdk/src/index.ts"]
+      // "@permit/react": ["../sdk/src/index.ts"],
+      // "@/*": ["../sdk/src/*"]
     }
   },
   "include": ["src"],

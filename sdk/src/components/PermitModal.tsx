@@ -125,9 +125,9 @@ export const PermitModal = ({
 
             {/* Separator */}
             <div className="flex justify-center items-center mt-2 gap-4">
-              <hr className="w-2/5 border-t border-gray-200" />
+              <hr className="w-2/5 border-t border-gray-200 dark:border-neutral-700" />
               <p className="text-sm text-muted-foreground">or</p>
-              <hr className="w-2/5 border-t border-gray-200" />
+              <hr className="w-2/5 border-t border-gray-200 dark:border-neutral-700" />
             </div>
           </>
         )}
@@ -136,7 +136,17 @@ export const PermitModal = ({
 
         {/* Footer */}
         <div className="flex justify-center mt-4">
-          <p className="text-sm text-muted-foreground">Secured by Permit</p>
+          <p className="text-sm text-muted-foreground">
+            Secured by{" "}
+            <a
+              href="https://permit.marcio.run"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              Permit
+            </a>
+          </p>
         </div>
       </DialogContent>
     </Dialog>

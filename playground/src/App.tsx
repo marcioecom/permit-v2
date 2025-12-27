@@ -1,7 +1,7 @@
-import { PermitProvider, usePermit, PermitButton } from '@permit/react'
+import { PermitButton, PermitProvider, usePermit } from "@permit/react";
 
 function AuthDemo() {
-  const { isAuthenticated, user } = usePermit()
+  const { isAuthenticated, user } = usePermit();
 
   return (
     <div className="max-w-3xl mx-auto p-8">
@@ -13,7 +13,9 @@ function AuthDemo() {
         <h2 className="text-xl font-semibold mb-4">Status</h2>
         <p className="mb-4">
           {isAuthenticated ? (
-            <span className="text-green-600">Autenticado como {user?.email}</span>
+            <span className="text-green-600">
+              Autenticado como {user?.email}
+            </span>
           ) : (
             <span className="text-muted-foreground">Não autenticado</span>
           )}
@@ -22,8 +24,12 @@ function AuthDemo() {
         {isAuthenticated && user && (
           <div className="mb-4 p-4 bg-secondary rounded-md">
             <h3 className="font-medium mb-2">Informações do Usuário</h3>
-            <p className="text-sm"><strong>ID:</strong> {user.id}</p>
-            <p className="text-sm"><strong>Email:</strong> {user.email}</p>
+            <p className="text-sm">
+              <strong>ID:</strong> {user.id}
+            </p>
+            <p className="text-sm">
+              <strong>Email:</strong> {user.email}
+            </p>
           </div>
         )}
 
@@ -42,7 +48,7 @@ function AuthDemo() {
         </ol>
       </div>
     </div>
-  )
+  );
 }
 
 function App() {
@@ -50,13 +56,13 @@ function App() {
     <PermitProvider
       projectId="test-project-id"
       config={{
-        apiUrl: 'http://localhost:8080/api/v1',
-        theme: 'light'
+        apiUrl: "http://localhost:8080/api/v1",
+        theme: "light",
       }}
     >
       <AuthDemo />
     </PermitProvider>
-  )
+  );
 }
 
-export default App
+export default App;

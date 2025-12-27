@@ -2,7 +2,7 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { usePermit } from "@/hooks/usePermit";
 import { LogIn, LogOut } from "lucide-react";
 
-interface PermitButtonProps extends Omit<ButtonProps, 'onClick'> {
+interface PermitButtonProps extends Omit<ButtonProps, "onClick"> {
   loginText?: string;
   logoutText?: string;
   showIcon?: boolean;

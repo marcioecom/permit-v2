@@ -1,3 +1,6 @@
+// CSS - será bundled e injetado automaticamente
+import "./global.css";
+
 // Context and Types
 export { PermitContext, type User } from "./context/PermitContext";
 
