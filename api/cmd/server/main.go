@@ -11,9 +11,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/marcioecom/permit/internal/config"
+	"github.com/marcioecom/permit/internal/crypto"
 	"github.com/marcioecom/permit/internal/database"
 	"github.com/marcioecom/permit/internal/handler"
 	hmiddleware "github.com/marcioecom/permit/internal/handler/middleware"
+	"github.com/marcioecom/permit/internal/infra"
 	"github.com/marcioecom/permit/internal/repository"
 	"github.com/marcioecom/permit/internal/service"
 	"github.com/rs/zerolog/log"
@@ -48,8 +50,24 @@ func main() {
 	userRepo := repository.NewPostgresUserRepo(db.Pool)
 	otpRepo := repository.NewPostgresOTPCodeRepo(db.Pool)
 	projectRepo := repository.NewPostgresProjectRepo(db.Pool)
+	identityRepo := repository.NewIdentityRepository(db.Pool)
 
-	authService := service.NewAuthService(userRepo, otpRepo)
+	keyManager := crypto.NewKeyManager()
+	if cfg.JWTPrivateKey != "" {
+		if err := keyManager.LoadFromPEM(cfg.JWTPrivateKey); err != nil {
+			log.Fatal().Err(err).Msg("failed to load JWT private key")
+		}
+	} else {
+		log.Warn().Msg("JWT_PRIVATE_KEY not set, generating ephemeral keys")
+		if err := keyManager.GenerateKeyPair(); err != nil {
+			log.Fatal().Err(err).Msg("failed to generate JWT keys")
+		}
+	}
+	jwtService := crypto.NewJWTService(keyManager, "permit")
+
+	emailService := infra.NewEmailService(cfg.ResendAPIKey, cfg.EmailFrom)
+
+	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo)
 	projectService := service.NewProjectService(projectRepo)
 
 	healthHandler := handler.NewHealthHandler(db.Pool)

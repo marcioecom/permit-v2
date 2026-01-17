@@ -10,18 +10,24 @@ import (
 )
 
 type Config struct {
-	Port        string `validate:"required"`
-	DatabaseURL string `validate:"required"`
-	AdminEmail  string `validate:"required"`
+	Port          string `validate:"required"`
+	DatabaseURL   string `validate:"required"`
+	AdminEmail    string `validate:"required"`
+	ResendAPIKey  string
+	EmailFrom     string
+	JWTPrivateKey string
 }
 
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	config := &Config{
-		Port:        getEnv("PORT", "8080"),
-		DatabaseURL: getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/permit"),
-		AdminEmail:  os.Getenv("ADMIN_EMAIL"),
+		Port:          getEnv("PORT", "8080"),
+		DatabaseURL:   getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/permit"),
+		AdminEmail:    os.Getenv("ADMIN_EMAIL"),
+		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
+		EmailFrom:     getEnv("EMAIL_FROM", "Permit <noreply@permit.dev>"),
+		JWTPrivateKey: os.Getenv("JWT_PRIVATE_KEY"),
 	}
 
 	if err := config.validate(); err != nil {

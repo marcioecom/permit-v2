@@ -11,42 +11,66 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/marcioecom/permit/internal/crypto"
+	"github.com/marcioecom/permit/internal/infra"
 	"github.com/marcioecom/permit/internal/models"
 	"github.com/marcioecom/permit/internal/repository"
 	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type AuthService struct {
-	jwtService crypto.JWTService
-	userRepo   repository.UserRepository
-	otpRepo    repository.OTPCodeRepository
+	jwtService   *crypto.JWTService
+	emailService *infra.EmailService
+	userRepo     repository.UserRepository
+	otpRepo      repository.OTPCodeRepository
+	identityRepo repository.IdentityRepository
 }
 
-func NewAuthService(userRepo repository.UserRepository, otpRepo repository.OTPCodeRepository) *AuthService {
+func NewAuthService(
+	jwtService *crypto.JWTService,
+	emailService *infra.EmailService,
+	userRepo repository.UserRepository,
+	otpRepo repository.OTPCodeRepository,
+	identityRepo repository.IdentityRepository,
+) *AuthService {
 	return &AuthService{
-		userRepo: userRepo,
-		otpRepo:  otpRepo,
+		jwtService:   jwtService,
+		emailService: emailService,
+		userRepo:     userRepo,
+		otpRepo:      otpRepo,
+		identityRepo: identityRepo,
 	}
 }
 
 type CreateAuthInput struct {
-	Email     string
-	ProjectID string
+	Email       string
+	ProjectID   string
+	ProjectName string
 }
 
-func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) (string, error) {
-	userID, err := s.userRepo.Create(ctx, &models.User{
-		ID:    ulid.Make().String(),
-		Email: input.Email,
-	})
-	if err != nil {
-		return "", err
+func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) error {
+	user, err := s.userRepo.GetByEmail(ctx, input.Email)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+
+	var userID string
+	if user == nil {
+		userID, err = s.userRepo.Create(ctx, &models.User{
+			ID:    ulid.Make().String(),
+			Email: input.Email,
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		userID = user.ID
 	}
 
 	digits := make([]string, 6)
 	for i := range digits {
-		a, _ := rand.Int(rand.Reader, big.NewInt(9))
-		digits[i] = a.String()
+		n, _ := rand.Int(rand.Reader, big.NewInt(10))
+		digits[i] = n.String()
 	}
 	code := strings.Join(digits, "")
 
@@ -58,10 +82,19 @@ func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) 
 		ExpiresAt: time.Now().Add(time.Minute * 10),
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return "", nil
+	projectName := input.ProjectName
+	if projectName == "" {
+		projectName = "Permit"
+	}
+
+	if err := s.emailService.SendOTP(input.Email, code, projectName); err != nil {
+		return fmt.Errorf("email_delivery_failed")
+	}
+
+	return nil
 }
 
 type VerifyAuthInput struct {
@@ -75,7 +108,6 @@ type VerifyAuthOutput struct {
 	User         *UserInfo `json:"user"`
 }
 
-// UserInfo represents basic user information
 type UserInfo struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
@@ -85,25 +117,19 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 	otp, err := s.otpRepo.GetByProjectAndCode(ctx, input.ProjectID, input.Code)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("code invalid or expired")
+			return nil, fmt.Errorf("invalid_code")
 		}
 		return nil, err
 	}
 
 	if otp.UsedAt != nil {
-		return nil, fmt.Errorf("code invalid")
+		return nil, fmt.Errorf("code_already_used")
 	}
-
-	// result := subtle.ConstantTimeCompare([]byte(input.Code), []byte(otp.Code))
-	// if result != equalContent {
-	// 	return fmt.Errorf("code invalid or expired")
-	// }
 
 	if time.Now().After(otp.ExpiresAt) {
-		return nil, fmt.Errorf("code invalid or expired")
+		return nil, fmt.Errorf("code_expired")
 	}
 
-	// TODO: use transaction
 	if err = s.otpRepo.MarkCodeAsUsed(ctx, otp.ID); err != nil {
 		return nil, err
 	}
@@ -113,19 +139,26 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 		return nil, err
 	}
 
-	accessToken, err := s.jwtService.SignAccessToken(
-		user.Email,
-		user.ID,
-		input.ProjectID,
-		"magic_link",
-	)
+	existingIdentity, _ := s.identityRepo.GetByUserAndProvider(ctx, user.ID, models.ProviderEmail)
+	if existingIdentity == nil {
+		if err := s.identityRepo.Create(ctx, &models.Identity{
+			ID:       ulid.Make().String(),
+			UserID:   user.ID,
+			Provider: models.ProviderEmail,
+			Email:    user.Email,
+		}); err != nil {
+			log.Warn().Err(err).Str("userId", user.ID).Msg("failed to link email identity")
+		}
+	}
+
+	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, input.ProjectID, "email")
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate access token: %w", err)
+		return nil, fmt.Errorf("token_generation_failed")
 	}
 
 	refreshToken, err := s.jwtService.SignRefreshToken(user.ID, input.ProjectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+		return nil, fmt.Errorf("token_generation_failed")
 	}
 
 	return &VerifyAuthOutput{

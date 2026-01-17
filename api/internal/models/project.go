@@ -18,12 +18,13 @@ type Project struct {
 }
 
 type APIKey struct {
-	ProjectID        string    `json:"projectId"`
-	Name             string    `json:"name"`
-	ClientID         string    `json:"clientId"`
-	ClientSecretHash string    `json:"clientSecretHash"`
-	LastUsedAt       time.Time `json:"lastUsedAt"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID               string     `json:"id"`
+	ProjectID        string     `json:"projectId"`
+	Name             string     `json:"name"`
+	ClientID         string     `json:"clientId"`
+	ClientSecretHash string     `json:"-"`
+	LastUsedAt       *time.Time `json:"lastUsedAt,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
 }
 
 type Widget struct {
