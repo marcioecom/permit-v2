@@ -13,6 +13,7 @@ import (
 	"github.com/marcioecom/permit/internal/config"
 	"github.com/marcioecom/permit/internal/database"
 	"github.com/marcioecom/permit/internal/handler"
+	hmiddleware "github.com/marcioecom/permit/internal/handler/middleware"
 	"github.com/marcioecom/permit/internal/repository"
 	"github.com/marcioecom/permit/internal/service"
 	"github.com/rs/zerolog/log"
@@ -37,6 +38,7 @@ func main() {
 
 	r := chi.NewRouter()
 
+	r.Use(hmiddleware.PublicCORS())
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)

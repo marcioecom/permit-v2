@@ -9,6 +9,8 @@ func SetupRoutes(r *chi.Mux, health *HealthHandler, auth *AuthHandler, project *
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
+			r.Get("/me", auth.GetMe)
+
 			r.Post("/otp/start", auth.OtpStart)
 			r.Post("/otp/verify", auth.OtpVerify)
 		})

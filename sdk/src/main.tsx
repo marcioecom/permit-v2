@@ -10,7 +10,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <PermitProvider
-        projectId="test-project-id"
+        projectId="01KD0PN8HCN98CTRCCE2285CV6"
         config={{
           apiUrl: "http://localhost:8080/api/v1",
           theme: "light",
@@ -19,5 +19,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <App />
       </PermitProvider>
     </ThemeProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

@@ -23,6 +23,10 @@ type OTPCodeStartRequest struct {
 	Email     string `json:"email"`
 }
 
+func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, nil)
+}
+
 func (h *AuthHandler) OtpStart(w http.ResponseWriter, r *http.Request) {
 	var req OTPCodeStartRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -45,6 +49,26 @@ func (h *AuthHandler) OtpStart(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type OTPCodeVerifyRequest struct {
+	ProjectID string `json:"projectId"`
+	Code      string `json:"code"`
+}
+
 func (h *AuthHandler) OtpVerify(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusCreated, map[string]string{})
+	var req OTPCodeVerifyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid_request", Message: "Invalid JSON body"})
+	}
+
+	output, err := h.service.VerifyOTPCode(r.Context(), service.VerifyAuthInput{
+		Code:      req.Code,
+		ProjectID: req.ProjectID,
+	})
+	if err != nil {
+		log.Err(err).Msg("verify otp code failed")
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error(), Message: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, output)
 }

@@ -8,8 +8,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { User } from "@/context/PermitContext";
+import { startOtp, verifyOtp } from "@/lib/api";
+import { ApiError } from "@/lib/api-client";
 import { AnimatePresence, motion } from "framer-motion";
-import { Lock } from "lucide-react";
+import { AlertCircle, Lock } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "./theme-provider";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
@@ -34,18 +36,21 @@ export const PermitModal = ({
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { theme } = useTheme();
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+
     try {
-      // TODO: fetch(apiUrl + '/auth/otp/start', ...)
-      console.log(`POST ${apiUrl}/auth/otp/start`, { email, projectId });
+      await startOtp(apiUrl, { email }, projectId);
       setStep("otp");
     } catch (err) {
-      alert("Erro ao enviar email");
+      const apiError = err as ApiError;
+      setError(apiError.message || "Failed to send verification code");
     } finally {
       setLoading(false);
     }
@@ -54,16 +59,17 @@ export const PermitModal = ({
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+
     try {
-      // TODO: fetch(apiUrl + '/auth/otp/verify', ...)
-      console.log(`POST ${apiUrl}/auth/otp/verify`, { email, otp, projectId });
-
-      const mockToken = "eyJ_fake_jwt_token";
-      const mockUser = { id: "ulid_123", email };
-
-      onSuccess(mockToken, mockUser);
+      const response = await verifyOtp(apiUrl, { email, code: otp }, projectId);
+      onSuccess(response.jwt, {
+        id: response.user.id,
+        email: response.user.email,
+      });
     } catch (err) {
-      alert("Código inválido");
+      const apiError = err as ApiError;
+      setError(apiError.message || "Invalid verification code");
     } finally {
       setLoading(false);
     }
@@ -76,6 +82,7 @@ export const PermitModal = ({
           email={email}
           setEmail={setEmail}
           loading={loading}
+          error={error}
           handleSendEmail={handleSendEmail}
         />
       );
@@ -88,6 +95,7 @@ export const PermitModal = ({
         setOtp={setOtp}
         setStep={setStep}
         loading={loading}
+        error={error}
         handleVerifyOtp={handleVerifyOtp}
       />
     );
@@ -157,11 +165,13 @@ function EmailFormStep({
   email,
   setEmail,
   loading,
+  error,
   handleSendEmail,
 }: {
   email: string;
   setEmail: (email: string) => void;
   loading: boolean;
+  error: string | null;
   handleSendEmail: (e: React.FormEvent) => void;
 }) {
   return (
@@ -174,12 +184,17 @@ function EmailFormStep({
       onSubmit={handleSendEmail}
       className="space-y-4"
     >
+      {error && (
+        <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400 rounded-md">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="email">Email address</Label>
         <Input
           id="email"
           type="email"
-          placeholder="seu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -195,10 +210,11 @@ function EmailFormStep({
 
 function OTPFormStep({
   email,
-  // otp,
-  // setOtp,
+  otp,
+  setOtp,
   setStep,
   loading,
+  error,
   handleVerifyOtp,
 }: {
   email: string;
@@ -206,6 +222,7 @@ function OTPFormStep({
   setOtp: (otp: string) => void;
   setStep: (step: "email" | "otp") => void;
   loading: boolean;
+  error: string | null;
   handleVerifyOtp: (e: React.FormEvent) => void;
 }) {
   return (
@@ -219,11 +236,23 @@ function OTPFormStep({
       className="space-y-4"
     >
       <p className="text-sm text-center text-muted-foreground">
-        Enviamos um código para <strong>{email}</strong>
+        We sent a code to <strong>{email}</strong>
       </p>
+      {error && (
+        <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400 rounded-md">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
       <div className="space-y-2 flex flex-col items-center">
-        <Label htmlFor="otp">Código de Verificação</Label>
-        <InputOTP maxLength={6} id="otp">
+        <Label htmlFor="otp">Verification Code</Label>
+        <InputOTP
+          maxLength={6}
+          id="otp"
+          value={otp}
+          onChange={setOtp}
+          autoFocus
+        >
           <InputOTPGroup>
             <InputOTPSlot index={0} />
             <InputOTPSlot index={1} />
@@ -234,8 +263,12 @@ function OTPFormStep({
           </InputOTPGroup>
         </InputOTP>
       </div>
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Validando..." : "Entrar"}
+      <Button
+        type="submit"
+        disabled={loading || otp.length !== 6}
+        className="w-full"
+      >
+        {loading ? "Verifying..." : "Sign in"}
       </Button>
       <Button
         type="button"
@@ -243,7 +276,7 @@ function OTPFormStep({
         onClick={() => setStep("email")}
         className="w-full"
       >
-        ← Voltar
+        ← Back
       </Button>
     </motion.form>
   );
