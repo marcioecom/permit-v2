@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/marcioecom/permit/internal/service"
 	"github.com/rs/zerolog/log"
@@ -13,38 +13,61 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{
-		service: authService,
-	}
+	return &AuthHandler{service: authService}
 }
 
 type OTPCodeStartRequest struct {
-	ProjectID string `json:"projectId"`
-	Email     string `json:"email"`
+	ProjectID string `json:"projectId" validate:"required"`
+	Email     string `json:"email" validate:"required,email"`
+}
+
+type OTPCodeVerifyRequest struct {
+	ProjectID string `json:"projectId" validate:"required"`
+	Code      string `json:"code" validate:"required,len=6,numeric"`
+}
+
+func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	writeSuccess(w, http.StatusOK, nil)
 }
 
 func (h *AuthHandler) OtpStart(w http.ResponseWriter, r *http.Request) {
 	var req OTPCodeStartRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid_request", Message: "Invalid JSON body"})
+	if err := decodeAndValidate(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", err.Error())
 		return
 	}
 
-	code, err := h.service.CreateOTPCode(r.Context(), service.CreateAuthInput{
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+
+	err := h.service.CreateOTPCode(r.Context(), service.CreateAuthInput{
 		Email:     req.Email,
 		ProjectID: req.ProjectID,
 	})
 	if err != nil {
-		log.Err(err).Msg("failed to create OTP code")
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Message: "If the email exists, a magic link has been sent"})
-		return
+		log.Warn().Err(err).Str("email", req.Email).Msg("OTP creation failed")
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]string{
-		"code": code,
+	writeSuccess(w, http.StatusOK, map[string]string{
+		"message": "If the email is valid, a verification code has been sent",
 	})
 }
 
 func (h *AuthHandler) OtpVerify(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusCreated, map[string]string{})
+	var req OTPCodeVerifyRequest
+	if err := decodeAndValidate(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", err.Error())
+		return
+	}
+
+	output, err := h.service.VerifyOTPCode(r.Context(), service.VerifyAuthInput{
+		Code:      req.Code,
+		ProjectID: req.ProjectID,
+	})
+	if err != nil {
+		log.Warn().Err(err).Str("projectId", req.ProjectID).Msg("OTP verification failed")
+		writeError(w, http.StatusBadRequest, "verification_failed", "Invalid or expired code")
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, output)
 }

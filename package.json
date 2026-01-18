@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "Permit - Auth as a Service",
   "scripts": {
-    "dev": "pnpm --parallel --stream dev",
+    "dev": "pnpm --parallel --stream --filter @permit/react build:watch --filter playground dev",
     "dev:playground": "pnpm --filter playground dev",
     "dev:sdk": "pnpm --filter @permit/react dev",
     "dev:api": "cd api && go run cmd/server/main.go",

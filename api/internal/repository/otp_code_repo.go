@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/marcioecom/permit/internal/models"
@@ -9,7 +10,8 @@ import (
 
 type OTPCodeRepository interface {
 	Create(ctx context.Context, p *models.OTPCode) error
-	GetByID(ctx context.Context, id string) (*models.OTPCode, error)
+	GetByProjectAndCode(ctx context.Context, projectID string, code string) (*models.OTPCode, error)
+	MarkCodeAsUsed(ctx context.Context, codeID string) error
 }
 
 type postgresOTPCodeRepo struct {
@@ -33,6 +35,27 @@ func (r *postgresOTPCodeRepo) Create(ctx context.Context, p *models.OTPCode) err
 	return nil
 }
 
-func (r *postgresOTPCodeRepo) GetByID(ctx context.Context, id string) (*models.OTPCode, error) {
-	return nil, nil
+func (r *postgresOTPCodeRepo) GetByProjectAndCode(ctx context.Context, projectID string, code string) (*models.OTPCode, error) {
+	var otpCode models.OTPCode
+
+	err := r.db.QueryRow(ctx, `
+		SELECT id, user_id, code, used_at, expires_at FROM otp_codes WHERE project_id = $1 AND code = $2;
+		`, projectID, code).
+		Scan(&otpCode.ID, &otpCode.UserID, &otpCode.Code, &otpCode.UsedAt, &otpCode.ExpiresAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &otpCode, nil
+}
+
+func (r *postgresOTPCodeRepo) MarkCodeAsUsed(ctx context.Context, codeID string) error {
+	_, err := r.db.Exec(ctx, `
+		UPDATE otp_codes SET used_at = $1 WHERE id = $2
+		`, time.Now(), codeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

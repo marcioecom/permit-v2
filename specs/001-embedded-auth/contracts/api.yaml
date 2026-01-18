@@ -1,0 +1,547 @@
+openapi: 3.0.3
+info:
+  title: Permit Authentication API
+  description: Embedded authentication API for Permit
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+paths:
+  /auth/otp/start:
+    post:
+      summary: Initiate OTP authentication
+      operationId: otpStart
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, email]
+              properties:
+                projectId:
+                  type: string
+                  description: Project ULID
+                email:
+                  type: string
+                  format: email
+      responses:
+        '201':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/otp/verify:
+    post:
+      summary: Verify OTP code
+      operationId: otpVerify
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, code]
+              properties:
+                projectId:
+                  type: string
+                code:
+                  type: string
+                  pattern: '^\d{6}$'
+      responses:
+        '201':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/oauth/{provider}:
+    get:
+      summary: Initiate OAuth flow
+      operationId: oauthStart
+      tags: [Authentication]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github]
+        - name: project_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to OAuth provider
+
+  /auth/oauth/{provider}/callback:
+    get:
+      summary: OAuth callback handler
+      operationId: oauthCallback
+      tags: [Authentication]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github]
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OAuth success page (posts message to opener)
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      operationId: refreshToken
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      summary: Revoke session
+      operationId: logout
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Session revoked
+
+  /auth/me:
+    get:
+      summary: Get current user
+      operationId: getMe
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /projects:
+    post:
+      summary: Create project
+      operationId: createProject
+      tags: [Projects]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+
+  /projects/{id}:
+    get:
+      summary: Get project configuration
+      operationId: getProject
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectConfigResponse'
+
+    patch:
+      summary: Update project
+      operationId: updateProject
+      tags: [Projects]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+
+  /projects/{id}/widget:
+    get:
+      summary: Get widget configuration
+      operationId: getWidget
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Widget config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetResponse'
+
+    patch:
+      summary: Update widget configuration
+      operationId: updateWidget
+      tags: [Projects]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWidgetRequest'
+      responses:
+        '200':
+          description: Widget updated
+
+  /projects/{id}/api-keys:
+    post:
+      summary: Create API key
+      operationId: createApiKey
+      tags: [Projects]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: API key created (secret shown only once)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        data:
+          type: object
+        error:
+          type: 'null'
+
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          type: 'null'
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+            user:
+              $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        identities:
+          type: array
+          items:
+            type: object
+            properties:
+              provider:
+                type: string
+              email:
+                type: string
+
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+
+    CreateProjectRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        allowedOrigins:
+          type: array
+          items:
+            type: string
+        allowedProviders:
+          type: array
+          items:
+            type: string
+            enum: [email, google, github]
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        allowedOrigins:
+          type: array
+          items:
+            type: string
+        allowedProviders:
+          type: array
+          items:
+            type: string
+
+    ProjectResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+            allowedOrigins:
+              type: array
+              items:
+                type: string
+            allowedProviders:
+              type: array
+              items:
+                type: string
+            createdAt:
+              type: string
+              format: date-time
+
+    ProjectConfigResponse:
+      type: object
+      description: Public project config (no sensitive data)
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            allowedProviders:
+              type: array
+              items:
+                type: string
+            widget:
+              $ref: '#/components/schemas/WidgetConfig'
+
+    WidgetConfig:
+      type: object
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+        themeConfig:
+          type: object
+          properties:
+            primaryColor:
+              type: string
+            logoUrl:
+              type: string
+            borderRadius:
+              type: string
+            darkMode:
+              type: boolean
+        enabledProviders:
+          type: array
+          items:
+            type: string
+
+    WidgetResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WidgetConfig'
+
+    UpdateWidgetRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+        themeConfig:
+          type: object
+        enabledProviders:
+          type: array
+          items:
+            type: string
+
+    ApiKeyResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            clientId:
+              type: string
+            clientSecret:
+              type: string
+              description: Only returned on creation
+            name:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -14,8 +14,12 @@
     "declarationMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "env.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

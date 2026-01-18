@@ -10,6 +10,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, p *models.User) (string, error)
 	GetByID(ctx context.Context, id string) (*models.User, error)
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
 type postgresUserRepo struct {
@@ -37,5 +38,30 @@ func (r *postgresUserRepo) Create(ctx context.Context, u *models.User) (string, 
 }
 
 func (r *postgresUserRepo) GetByID(ctx context.Context, id string) (*models.User, error) {
-	return nil, nil
+	var user models.User
+
+	err := r.db.QueryRow(ctx, `
+		SELECT id, email, created_at
+		FROM users WHERE id = $1;
+	`, id).Scan(&user.ID, &user.Email, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
+
+func (r *postgresUserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	var user models.User
+
+	err := r.db.QueryRow(ctx, `
+		SELECT id, email, created_at
+		FROM users WHERE email = $1;
+	`, email).Scan(&user.ID, &user.Email, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+

@@ -9,7 +9,7 @@ type Project struct {
 	ID               string          `json:"id"`
 	OwnerID          string          `json:"ownerId"`
 	Name             string          `json:"name"`
-	Description      string          `json:"description"`
+	Description      *string         `json:"description"`
 	AllowedOrigins   []string        `json:"allowed_origins"`
 	AllowedProviders []string        `json:"allowed_providers"`
 	ThemeConfig      json.RawMessage `json:"theme_config"`
@@ -18,12 +18,13 @@ type Project struct {
 }
 
 type APIKey struct {
-	ProjectID        string    `json:"projectId"`
-	Name             string    `json:"name"`
-	ClientID         string    `json:"clientId"`
-	ClientSecretHash string    `json:"clientSecretHash"`
-	LastUsedAt       time.Time `json:"lastUsedAt"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID               string     `json:"id"`
+	ProjectID        string     `json:"projectId"`
+	Name             string     `json:"name"`
+	ClientID         string     `json:"clientId"`
+	ClientSecretHash string     `json:"-"`
+	LastUsedAt       *time.Time `json:"lastUsedAt,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
 }
 
 type Widget struct {

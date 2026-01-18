@@ -1,56 +1,54 @@
-import { PermitProvider, usePermit } from '@permit/react'
-import './App.css'
+import { PermitButton, PermitProvider, usePermit } from "@permit/react";
 
 function AuthDemo() {
-  const { isAuthenticated, isLoading, user, login, logout } = usePermit()
-
-  if (isLoading) {
-    return <div>Carregando...</div>
-  }
+  const { isAuthenticated, user } = usePermit();
 
   return (
-    <div className="auth-container">
-      <h1>Permit SDK Playground</h1>
+    <div className="max-w-3xl mx-auto p-8">
+      <h1 className="text-4xl font-bold text-center mb-8">
+        Permit SDK Playground
+      </h1>
 
-      <div className="status-card">
-        <h2>Status de Autenticação</h2>
-        <p>
-          Status: <strong>{isAuthenticated ? 'Autenticado' : 'Não Autenticado'}</strong>
+      <div className="bg-card rounded-lg p-6 mb-6 border">
+        <h2 className="text-xl font-semibold mb-4">Status</h2>
+        <p className="mb-4">
+          {isAuthenticated ? (
+            <span className="text-green-600">
+              Autenticado como {user?.email}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Não autenticado</span>
+          )}
         </p>
 
         {isAuthenticated && user && (
-          <div className="user-info">
-            <h3>Informações do Usuário</h3>
-            <p><strong>ID:</strong> {user.id}</p>
-            <p><strong>Email:</strong> {user.email}</p>
+          <div className="mb-4 p-4 bg-secondary rounded-md">
+            <h3 className="font-medium mb-2">Informações do Usuário</h3>
+            <p className="text-sm">
+              <strong>ID:</strong> {user.id}
+            </p>
+            <p className="text-sm">
+              <strong>Email:</strong> {user.email}
+            </p>
           </div>
         )}
+
+        {/* Using the new PermitButton component */}
+        <PermitButton className="w-full" />
       </div>
 
-      <div className="actions">
-        {!isAuthenticated ? (
-          <button onClick={login} className="btn-primary">
-            Login com Permit
-          </button>
-        ) : (
-          <button onClick={logout} className="btn-secondary">
-            Logout
-          </button>
-        )}
-      </div>
-
-      <div className="info-section">
-        <h3>Como Testar</h3>
-        <ol>
+      <div className="bg-card rounded-lg p-6 border">
+        <h3 className="text-lg font-semibold mb-3">Como Testar</h3>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
           <li>Certifique-se que a API está rodando na porta 8080</li>
-          <li>Clique em "Login com Permit" para abrir o modal</li>
+          <li>Clique em "Login" para abrir o modal</li>
           <li>Digite seu email para receber o código OTP</li>
           <li>Digite o código OTP para autenticar</li>
           <li>As informações do usuário aparecerão acima</li>
         </ol>
       </div>
     </div>
-  )
+  );
 }
 
 function App() {
@@ -58,13 +56,13 @@ function App() {
     <PermitProvider
       projectId="test-project-id"
       config={{
-        apiUrl: 'http://localhost:8080/api/v1',
-        theme: 'light'
+        apiUrl: "http://localhost:8080/api/v1",
+        theme: "light",
       }}
     >
       <AuthDemo />
     </PermitProvider>
-  )
+  );
 }
 
-export default App
+export default App;
