@@ -70,11 +70,13 @@ func main() {
 	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo)
 	projectService := service.NewProjectService(projectRepo)
 
-	healthHandler := handler.NewHealthHandler(db.Pool)
-	authHandler := handler.NewAuthHandler(authService)
-	projectHandler := handler.NewProjectHandler(projectService)
+	handlers := &handler.Handlers{
+		Health:  handler.NewHealthHandler(db.Pool),
+		Auth:    handler.NewAuthHandler(authService),
+		Project: handler.NewProjectHandler(projectService),
+	}
 
-	handler.SetupRoutes(r, healthHandler, authHandler, projectHandler)
+	handler.SetupRoutes(r, handlers, jwtService)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,

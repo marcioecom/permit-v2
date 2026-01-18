@@ -13,7 +13,7 @@ type Config struct {
 	Port          string `validate:"required"`
 	DatabaseURL   string `validate:"required"`
 	AdminEmail    string `validate:"required"`
-	ResendAPIKey  string
+	ResendAPIKey  string `validate:"required"`
 	EmailFrom     string
 	JWTPrivateKey string
 }
@@ -26,7 +26,7 @@ func Load() (*Config, error) {
 		DatabaseURL:   getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/permit"),
 		AdminEmail:    os.Getenv("ADMIN_EMAIL"),
 		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
-		EmailFrom:     getEnv("EMAIL_FROM", "Permit <noreply@permit.dev>"),
+		EmailFrom:     getEnv("EMAIL_FROM", "Permit <noreply@permit.marcio.run>"),
 		JWTPrivateKey: os.Getenv("JWT_PRIVATE_KEY"),
 	}
 

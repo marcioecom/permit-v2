@@ -1,7 +1,7 @@
-import { useState, useEffect, type ReactNode, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PermitContext, type User } from "./context/PermitContext";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { PermitModal } from "./components/PermitModal";
+import { PermitContext, type User } from "./context/PermitContext";
 import { useValidateToken } from "./lib/auth";
 
 interface PermitConfig {
@@ -63,6 +63,14 @@ const PermitProviderInner = ({
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [widgetConfig, setWidgetConfig] = useState<{
+    title?: string;
+    subtitle?: string;
+    enabledProviders?: string[];
+    primaryColor?: string;
+    logoUrl?: string;
+  } | null>(null);
+  const [configError, setConfigError] = useState<string | null>(null);
 
   // Load stored credentials on mount
   useEffect(() => {
@@ -74,6 +82,27 @@ const PermitProviderInner = ({
       setUser(JSON.parse(storedUser));
     }
   }, [projectId]);
+
+  // Fetch widget config on mount
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/projects/${projectId}/widget`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            setConfigError("Invalid project ID");
+            return;
+          }
+          throw new Error("Failed to load configuration");
+        }
+        const data = await response.json();
+        setWidgetConfig(data.data || data);
+      } catch {
+        setConfigError("Failed to load project configuration");
+      }
+    };
+    fetchConfig();
+  }, [apiUrl, projectId]);
 
   // Validate token with backend
   const { isLoading: isValidating, isError: isTokenInvalid } = useValidateToken(
@@ -125,6 +154,8 @@ const PermitProviderInner = ({
         token,
         login,
         logout,
+        widgetConfig,
+        configError,
       }}
     >
       {children}
@@ -135,6 +166,7 @@ const PermitProviderInner = ({
           onClose={() => setIsModalOpen(false)}
           onSuccess={handleLoginSuccess}
           apiUrl={apiUrl}
+          widgetConfig={widgetConfig}
         />
       )}
     </PermitContext.Provider>

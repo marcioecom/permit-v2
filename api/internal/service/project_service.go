@@ -45,7 +45,7 @@ func (s *ProjectService) CreateProject(ctx context.Context, input CreateProjectI
 		ID:               ulid.Make().String(),
 		OwnerID:          input.OwnerID,
 		Name:             input.Name,
-		Description:      input.Description,
+		Description:      &input.Description,
 		AllowedOrigins:   input.AllowedOrigins,
 		AllowedProviders: providers,
 	}
@@ -103,7 +103,7 @@ func (s *ProjectService) UpdateProject(ctx context.Context, input UpdateProjectI
 		project.Name = input.Name
 	}
 	if input.Description != "" {
-		project.Description = input.Description
+		project.Description = &input.Description
 	}
 	if input.AllowedOrigins != nil {
 		project.AllowedOrigins = input.AllowedOrigins

@@ -9,7 +9,7 @@ type Project struct {
 	ID               string          `json:"id"`
 	OwnerID          string          `json:"ownerId"`
 	Name             string          `json:"name"`
-	Description      string          `json:"description"`
+	Description      *string         `json:"description"`
 	AllowedOrigins   []string        `json:"allowed_origins"`
 	AllowedProviders []string        `json:"allowed_providers"`
 	ThemeConfig      json.RawMessage `json:"theme_config"`

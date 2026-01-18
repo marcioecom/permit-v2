@@ -91,6 +91,7 @@ func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) 
 	}
 
 	if err := s.emailService.SendOTP(input.Email, code, projectName); err != nil {
+		log.Warn().Err(err).Str("email", input.Email).Msg("OTP creation failed")
 		return fmt.Errorf("email_delivery_failed")
 	}
 

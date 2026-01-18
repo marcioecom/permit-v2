@@ -24,6 +24,13 @@ interface PermitModalProps {
   apiUrl: string;
   onClose: () => void;
   onSuccess: (token: string, user: User) => void;
+  widgetConfig?: {
+    title?: string;
+    subtitle?: string;
+    enabledProviders?: string[];
+    primaryColor?: string;
+    logoUrl?: string;
+  } | null;
 }
 
 export const PermitModal = ({

@@ -76,10 +76,10 @@
 - [x] T022 [US2] Add per-project user creation logic in api/internal/service/auth_service.go
 - [x] T023 [US2] Add input validation to OTP handlers in api/internal/handler/auth.go
 - [x] T024 [US2] Apply rate limiter middleware to OTP endpoints in api/internal/handler/routes.go
-- [ ] T025 [P] [US2] Update EmailInput component for validation in sdk/src/components/EmailInput.tsx
-- [ ] T026 [P] [US2] Update OTPInput component for 6-digit entry in sdk/src/components/OTPInput.tsx
-- [ ] T027 [US2] Add error display for fail-fast behavior in sdk/src/components/PermitModal.tsx
-- [ ] T028 [US2] Add loading states to OTP flow in sdk/src/components/PermitModal.tsx
+- [x] T025 [P] [US2] Update EmailInput component for validation in sdk/src/components/EmailInput.tsx
+- [x] T026 [P] [US2] Update OTPInput component for 6-digit entry in sdk/src/components/OTPInput.tsx
+- [x] T027 [US2] Add error display for fail-fast behavior in sdk/src/components/PermitModal.tsx
+- [x] T028 [US2] Add loading states to OTP flow in sdk/src/components/PermitModal.tsx
 
 **Checkpoint**: User Story 2 complete - OTP auth flow fully functional
 
@@ -93,11 +93,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Add project config fetch on mount in sdk/src/lib/auth.ts
-- [ ] T030 [US4] Update PermitProvider to fetch project config in sdk/src/PermitProvider.tsx
-- [ ] T031 [US4] Apply theme config (colors, logo) to modal in sdk/src/components/PermitModal.tsx
-- [ ] T032 [US4] Show enabled auth methods from config in sdk/src/components/PermitModal.tsx
-- [ ] T033 [US4] Improve error handling for invalid App ID in sdk/src/PermitProvider.tsx
+- [x] T029 [US4] Add project config fetch on mount in sdk/src/lib/auth.ts
+- [x] T030 [US4] Update PermitProvider to fetch project config in sdk/src/PermitProvider.tsx
+- [x] T031 [US4] Apply theme config (colors, logo) to modal in sdk/src/components/PermitModal.tsx
+- [x] T032 [US4] Show enabled auth methods from config in sdk/src/components/PermitModal.tsx
+- [x] T033 [US4] Improve error handling for invalid App ID in sdk/src/PermitProvider.tsx
 - [ ] T034 [US4] Update playground to test SDK integration in playground/src/App.tsx
 
 **Checkpoint**: User Story 4 complete - SDK fully integrable with project ID

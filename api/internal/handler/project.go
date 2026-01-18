@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/marcioecom/permit/internal/handler/middleware"
 	"github.com/marcioecom/permit/internal/models"
 	"github.com/marcioecom/permit/internal/service"
+	"github.com/rs/zerolog/log"
 )
 
 type ProjectHandler struct {
@@ -30,18 +32,21 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ownerID := middleware.GetUserID(r.Context())
+	if ownerID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Authentication required")
+		return
+	}
+
 	output, err := h.service.CreateProject(r.Context(), service.CreateProjectInput{
-		OwnerID:          "",
+		OwnerID:          ownerID,
 		Name:             req.Name,
 		Description:      req.Description,
 		AllowedOrigins:   req.AllowedOrigins,
 		AllowedProviders: req.AllowedProviders,
 	})
 	if err != nil {
-		if err.Error() == "name_required" {
-			writeError(w, http.StatusBadRequest, "name_required", "Project name is required")
-			return
-		}
+		log.Error().Err(err).Msg("Failed to create project")
 		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to create project")
 		return
 	}
@@ -58,6 +63,7 @@ func (h *ProjectHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	project, err := h.service.GetProject(r.Context(), id)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to get project")
 		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to get project")
 		return
 	}
