@@ -98,7 +98,7 @@
 - [x] T031 [US4] Apply theme config (colors, logo) to modal in sdk/src/components/PermitModal.tsx
 - [x] T032 [US4] Show enabled auth methods from config in sdk/src/components/PermitModal.tsx
 - [x] T033 [US4] Improve error handling for invalid App ID in sdk/src/PermitProvider.tsx
-- [ ] T034 [US4] Update playground to test SDK integration in playground/src/App.tsx
+- [x] T034 [US4] Update playground to test SDK integration in playground/src/App.tsx
 
 **Checkpoint**: User Story 4 complete - SDK fully integrable with project ID
 
@@ -118,10 +118,10 @@
 - [x] T038 [US5] Implement POST /auth/refresh endpoint in api/internal/handler/session.go
 - [x] T039 [US5] Implement POST /auth/logout endpoint in api/internal/handler/session.go
 - [x] T040 [US5] Add session routes to api/internal/handler/routes.go
-- [ ] T041 [P] [US5] Add token refresh logic in sdk/src/lib/auth.ts
-- [ ] T042 [P] [US5] Add logout API call in sdk/src/lib/auth.ts
-- [ ] T043 [US5] Add automatic token refresh in sdk/src/PermitProvider.tsx
-- [ ] T044 [US5] Expose user data via usePermit hook in sdk/src/hooks/usePermit.ts
+- [x] T041 [P] [US5] Add token refresh logic in sdk/src/lib/auth.ts
+- [x] T042 [P] [US5] Add logout API call in sdk/src/lib/auth.ts
+- [x] T043 [US5] Add automatic token refresh in sdk/src/PermitProvider.tsx
+- [x] T044 [US5] Expose user data via usePermit hook in sdk/src/hooks/usePermit.ts
 
 **Checkpoint**: User Story 5 complete - full session lifecycle working
 

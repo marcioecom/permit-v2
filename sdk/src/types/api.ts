@@ -27,8 +27,12 @@ export type User = Entity<{
 }>;
 
 export type AuthResponse = {
-  jwt: string;
-  user: User;
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+  };
 };
 
 export type Team = Entity<{

@@ -50,36 +50,15 @@ export const logout = (apiUrl: string, token: string): Promise<void> => {
   return api.post("/auth/logout");
 };
 
-// ============================================
-// Legacy Email/Password (kept for reference)
-// ============================================
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
 
-export const loginInputSchema = z.object({
-  email: z.string().min(1, "Required").email("Invalid email"),
-  password: z.string().min(5, "Required"),
-});
-
-export type LoginInput = z.infer<typeof loginInputSchema>;
-
-export const registerInputSchema = z
-  .object({
-    email: z.string().min(1, "Required"),
-    firstName: z.string().min(1, "Required"),
-    lastName: z.string().min(1, "Required"),
-    password: z.string().min(5, "Required"),
-  })
-  .and(
-    z
-      .object({
-        teamId: z.string().min(1, "Required"),
-        teamName: z.null().default(null),
-      })
-      .or(
-        z.object({
-          teamName: z.string().min(1, "Required"),
-          teamId: z.null().default(null),
-        })
-      )
-  );
-
-export type RegisterInput = z.infer<typeof registerInputSchema>;
+export const refreshToken = (
+  apiUrl: string,
+  refreshTokenValue: string
+): Promise<RefreshTokenResponse> => {
+  const api = createApiClient(apiUrl);
+  return api.post("/auth/refresh", { refreshToken: refreshTokenValue });
+};

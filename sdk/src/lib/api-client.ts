@@ -39,7 +39,14 @@ export const createApiClient = (baseURL: string, token?: string) => {
 
   instance.interceptors.request.use(createAuthRequestInterceptor(token));
   instance.interceptors.response.use(
-    (response) => response.data,
+    (response) => {
+      // API returns { data: ..., error: ... }
+      // Extract the nested data for convenience
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        return response.data.data;
+      }
+      return response.data;
+    },
     responseErrorInterceptor
   );
 

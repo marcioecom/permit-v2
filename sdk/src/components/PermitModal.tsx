@@ -70,7 +70,8 @@ export const PermitModal = ({
 
     try {
       const response = await verifyOtp(apiUrl, { email, code: otp }, projectId);
-      onSuccess(response.jwt, {
+
+      onSuccess(response.accessToken, {
         id: response.user.id,
         email: response.user.email,
       });
@@ -110,7 +111,11 @@ export const PermitModal = ({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <div className="flex justify-center">
             <Lock />
