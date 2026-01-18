@@ -112,12 +112,12 @@
 
 ### Implementation for User Story 5
 
-- [ ] T035 [US5] Create SessionService in api/internal/service/session_service.go
-- [ ] T036 [P] [US5] Create session handler in api/internal/handler/session.go
-- [ ] T037 [US5] Implement GET /auth/me endpoint in api/internal/handler/auth.go
-- [ ] T038 [US5] Implement POST /auth/refresh endpoint in api/internal/handler/session.go
-- [ ] T039 [US5] Implement POST /auth/logout endpoint in api/internal/handler/session.go
-- [ ] T040 [US5] Add session routes to api/internal/handler/routes.go
+- [x] T035 [US5] Create SessionService in api/internal/service/session_service.go
+- [x] T036 [P] [US5] Create session handler in api/internal/handler/session.go
+- [x] T037 [US5] Implement GET /auth/me endpoint in api/internal/handler/auth.go
+- [x] T038 [US5] Implement POST /auth/refresh endpoint in api/internal/handler/session.go
+- [x] T039 [US5] Implement POST /auth/logout endpoint in api/internal/handler/session.go
+- [x] T040 [US5] Add session routes to api/internal/handler/routes.go
 - [ ] T041 [P] [US5] Add token refresh logic in sdk/src/lib/auth.ts
 - [ ] T042 [P] [US5] Add logout API call in sdk/src/lib/auth.ts
 - [ ] T043 [US5] Add automatic token refresh in sdk/src/PermitProvider.tsx

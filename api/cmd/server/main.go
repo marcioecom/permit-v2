@@ -68,11 +68,13 @@ func main() {
 	emailService := infra.NewEmailService(cfg.ResendAPIKey, cfg.EmailFrom)
 
 	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo)
+	sessionService := service.NewSessionService(jwtService, userRepo)
 	projectService := service.NewProjectService(projectRepo)
 
 	handlers := &handler.Handlers{
 		Health:  handler.NewHealthHandler(db.Pool),
 		Auth:    handler.NewAuthHandler(authService),
+		Session: handler.NewSessionHandler(sessionService),
 		Project: handler.NewProjectHandler(projectService),
 	}
 

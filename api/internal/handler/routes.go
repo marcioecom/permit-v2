@@ -9,6 +9,7 @@ import (
 type Handlers struct {
 	Health  *HealthHandler
 	Auth    *AuthHandler
+	Session *SessionHandler
 	Project *ProjectHandler
 }
 
@@ -20,9 +21,11 @@ func SetupRoutes(r *chi.Mux, h *Handlers, jwtService *crypto.JWTService) {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
-			r.With(authMiddleware.RequireAuth).Get("/me", h.Auth.GetMe)
+			r.With(authMiddleware.RequireAuth).Get("/me", h.Session.GetMe)
 			r.With(otpRateLimiter).Post("/otp/start", h.Auth.OtpStart)
 			r.Post("/otp/verify", h.Auth.OtpVerify)
+			r.Post("/refresh", h.Session.Refresh)
+			r.With(authMiddleware.RequireAuth).Post("/logout", h.Session.Logout)
 		})
 
 		r.Route("/projects", func(r chi.Router) {
