@@ -1,145 +1,82 @@
-# Quickstart: Permit Embedded Authentication
-
-**Feature**: 001-embedded-auth
-**Date**: 2026-01-17
+# Quickstart - Permit Embedded Auth
 
 ## Prerequisites
 
-- Docker & Docker Compose
 - Go 1.24+
-- Node.js 20+ & pnpm
-- A Resend API key (for email OTP)
+- Node.js 18+
+- PostgreSQL 15+
+- Docker (optional, for MailHog)
 
----
-
-## 1. Start Infrastructure
-
-```bash
-cd api
-docker compose up -d
-```
-
-This starts PostgreSQL 16 on `localhost:5432`.
-
----
-
-## 2. Configure Environment
+## 1. Setup API
 
 ```bash
-# api/.env
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/permit?sslmode=disable
-RESEND_API_KEY=re_xxxxxxxxxxxxx
-JWT_SECRET=your-secret-key-at-least-32-chars
+# Start database
+cd api && docker compose up -d postgres
 
-# For OAuth (optional)
-GOOGLE_CLIENT_ID=xxx
-GOOGLE_CLIENT_SECRET=xxx
-GITHUB_CLIENT_ID=xxx
-GITHUB_CLIENT_SECRET=xxx
+# Run migrations
+psql $DATABASE_URL < internal/database/migrations/001_initial.sql
+psql $DATABASE_URL < internal/database/migrations/002_add_identities.sql
+
+# Seed initial data
+psql $DATABASE_URL -c "INSERT INTO users (id, email) VALUES ('YOUR_USER_ULID', 'admin@example.com');"
+psql $DATABASE_URL -c "INSERT INTO projects (id, owner_id, name) VALUES ('YOUR_PROJECT_ULID', 'YOUR_USER_ULID', 'My App');"
+
+# Start API (with MailHog for local testing)
+USE_MAILHOG=true go run ./cmd/server/main.go
 ```
 
----
-
-## 3. Run Migrations
+## 2. Setup SDK
 
 ```bash
-cd api
-go run cmd/migrate/main.go
+cd sdk && pnpm install && pnpm dev
 ```
 
----
-
-## 4. Start API Server
+## 3. Setup Playground
 
 ```bash
-cd api
-go run cmd/server/main.go
+cd playground && pnpm install && pnpm dev
 ```
-
-API available at `http://localhost:8080`.
-
----
-
-## 5. Start SDK Development Server
-
-```bash
-cd sdk
-pnpm install
-pnpm dev
-```
-
-SDK dev server at `http://localhost:5173`.
-
----
-
-## 6. Test the Flow
-
-### Create a Project (via API)
-
-```bash
-curl -X POST http://localhost:8080/api/v1/projects \
-  -H "Content-Type: application/json" \
-  -d '{"name": "My App"}'
-```
-
-Note the returned `id`.
-
-### Integrate SDK
-
-```tsx
-import { PermitProvider, usePermit } from '@permit/sdk';
-
-function App() {
-  return (
-    <PermitProvider projectId="YOUR_PROJECT_ID">
-      <LoginButton />
-    </PermitProvider>
-  );
-}
-
-function LoginButton() {
-  const { login, user, isAuthenticated } = usePermit();
-
-  if (isAuthenticated) {
-    return <p>Welcome, {user?.email}</p>;
-  }
-
-  return <button onClick={login}>Sign In</button>;
-}
-```
-
-### Test OTP Flow
-
-1. Click "Sign In" → Modal opens
-2. Enter email → OTP sent (check Resend dashboard or logs)
-3. Enter 6-digit code → Authenticated
-
----
-
-## 7. Run Tests
-
-### API Tests (Go)
-
-```bash
-cd api
-go test ./...
-```
-
-### SDK Tests (React)
-
-```bash
-cd sdk
-pnpm test
-```
-
----
 
 ## Validation Checklist
 
-- [ ] PostgreSQL container running
-- [ ] Migrations applied successfully
-- [ ] API responds to `GET /health`
-- [ ] OTP email sent when initiating auth
-- [ ] OTP verification returns tokens
-- [ ] SDK modal opens and closes
-- [ ] Session persists across page refresh
+### OTP Flow ✅
+
+- [ ] Open playground at http://localhost:3000
+- [ ] Click "Login" button
+- [ ] Enter email and submit
+- [ ] Check MailHog at http://localhost:8025 for OTP email
+- [ ] Enter OTP code in modal
+- [ ] Verify user info displays after login
+- [ ] Click "Logout" and verify session ends
+
+### API Endpoints ✅
+
+```bash
+# Health check
+curl http://localhost:8080/health
+
+# Get project widget config
+curl http://localhost:8080/api/v1/projects/YOUR_PROJECT_ID/widget
+
+# Start OTP
+curl -X POST http://localhost:8080/api/v1/auth/otp/start \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","projectId":"YOUR_PROJECT_ID"}'
+
+# Verify OTP (get code from MailHog)
+curl -X POST http://localhost:8080/api/v1/auth/otp/verify \
+  -H "Content-Type: application/json" \
+  -d '{"code":"123456","projectId":"YOUR_PROJECT_ID"}'
+
+# Get current user (with token from verify)
+curl http://localhost:8080/api/v1/auth/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| CORS errors | Check `allowedOrigins` in project config |
+| Email not sent | Ensure `USE_MAILHOG=true` and MailHog is running |
+| Invalid token | JWT keys are ephemeral - restart API may invalidate tokens |

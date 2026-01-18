@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { renderHook } from "@testing-library/react";
 import { usePermit } from "@/hooks/usePermit";
 import { PermitProvider } from "@/PermitProvider";
+import { renderHook } from "@testing-library/react";
 import { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
 
 describe("usePermit", () => {
   const wrapper = ({ children }: { children: ReactNode }) => (

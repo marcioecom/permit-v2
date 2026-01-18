@@ -155,12 +155,12 @@
 
 **Purpose**: Documentation, tests, and final cleanup
 
-- [ ] T056 [P] Update SDK README with integration examples in sdk/README.md
-- [ ] T057 [P] Add API documentation comments in api/internal/handler/*.go
-- [ ] T058 Update quickstart.md validation checklist in specs/001-embedded-auth/quickstart.md
-- [ ] T059 Run manual OTP flow test per quickstart.md
-- [ ] T060 Run manual social login test per quickstart.md
-- [ ] T061 Run SDK tests: `cd sdk && pnpm test`
+- [x] T056 [P] Update SDK README with integration examples in sdk/README.md
+- [x] T057 [P] Add API documentation comments in api/internal/handler/*.go
+- [x] T058 Update quickstart.md validation checklist in specs/001-embedded-auth/quickstart.md
+- [x] T059 Run manual OTP flow test per quickstart.md
+- [N/A] T060 Run manual social login test per quickstart.md (Social login skipped)
+- [x] T061 Run SDK tests: `cd sdk && pnpm test`
 
 ---
 

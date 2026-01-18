@@ -1,6 +1,6 @@
+import type { User } from "@/context/PermitContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUser, startOtp, verifyOtp } from "./api";
-import type { User } from "@/context/PermitContext";
 
 // ============================================
 // Query Keys
@@ -61,7 +61,7 @@ export const useVerifyOtp = ({
       });
 
       onSuccess?.({
-        token: response.jwt,
+        token: response.accessToken,
         user: { id: response.user.id, email: response.user.email },
       });
     },

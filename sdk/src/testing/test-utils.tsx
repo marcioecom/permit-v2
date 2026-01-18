@@ -1,7 +1,7 @@
-import { ReactElement, ReactNode } from "react";
-import { render, RenderOptions } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PermitProvider } from "@/PermitProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, RenderOptions, RenderResult } from "@testing-library/react";
+import { ReactElement, ReactNode } from "react";
 
 // Create a fresh QueryClient for each test
 const createTestQueryClient = () =>
@@ -50,14 +50,14 @@ const createPermitWrapper = (options: PermitWrapperOptions = {}) => {
 const customRender = (
   ui: ReactElement,
   options?: Omit<RenderOptions, "wrapper">
-) => render(ui, { wrapper: QueryWrapper, ...options });
+): RenderResult => render(ui, { wrapper: QueryWrapper, ...options });
 
 // Render with PermitProvider
 const renderWithPermit = (
   ui: ReactElement,
   permitOptions?: PermitWrapperOptions,
   renderOptions?: Omit<RenderOptions, "wrapper">
-) =>
+): RenderResult =>
   render(ui, {
     wrapper: createPermitWrapper(permitOptions),
     ...renderOptions,
