@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/marcioecom/permit/internal/crypto"
 	"github.com/marcioecom/permit/internal/handler/middleware"
+	"github.com/marcioecom/permit/internal/repository"
 )
 
 type Handlers struct {
@@ -13,17 +14,27 @@ type Handlers struct {
 	Project *ProjectHandler
 }
 
-func SetupRoutes(r *chi.Mux, h *Handlers, jwtService *crypto.JWTService) {
+type Services struct {
+	JWTService  *crypto.JWTService
+	ProjectRepo repository.ProjectRepository
+}
+
+func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 	r.Get("/health", h.Health.GetHealth)
 
+	corsMiddleware := middleware.NewCORSMiddleware(services.ProjectRepo)
 	otpRateLimiter := middleware.RateLimitMiddleware(middleware.OTPLimiter, middleware.IPKeyExtractor)
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	authMiddleware := middleware.NewAuthMiddleware(services.JWTService)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
+			r.Use(corsMiddleware.Handler())
+
 			r.With(authMiddleware.RequireAuth).Get("/me", h.Session.GetMe)
+
 			r.With(otpRateLimiter).Post("/otp/start", h.Auth.OtpStart)
 			r.Post("/otp/verify", h.Auth.OtpVerify)
+
 			r.Post("/refresh", h.Session.Refresh)
 			r.With(authMiddleware.RequireAuth).Post("/logout", h.Session.Logout)
 		})

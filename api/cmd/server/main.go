@@ -65,7 +65,7 @@ func main() {
 	}
 	jwtService := crypto.NewJWTService(keyManager, "permit")
 
-	emailService := infra.NewEmailService(cfg.ResendAPIKey, cfg.EmailFrom)
+	emailService := infra.NewEmailService(cfg)
 
 	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo)
 	sessionService := service.NewSessionService(jwtService, userRepo)
@@ -77,8 +77,12 @@ func main() {
 		Session: handler.NewSessionHandler(sessionService),
 		Project: handler.NewProjectHandler(projectService),
 	}
+	services := &handler.Services{
+		JWTService:  jwtService,
+		ProjectRepo: projectRepo,
+	}
 
-	handler.SetupRoutes(r, handlers, jwtService)
+	handler.SetupRoutes(r, handlers, services)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,

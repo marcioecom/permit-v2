@@ -20,7 +20,7 @@ import (
 
 type AuthService struct {
 	jwtService   *crypto.JWTService
-	emailService *infra.EmailService
+	emailService infra.EmailSender
 	userRepo     repository.UserRepository
 	otpRepo      repository.OTPCodeRepository
 	identityRepo repository.IdentityRepository
@@ -28,7 +28,7 @@ type AuthService struct {
 
 func NewAuthService(
 	jwtService *crypto.JWTService,
-	emailService *infra.EmailService,
+	emailService infra.EmailSender,
 	userRepo repository.UserRepository,
 	otpRepo repository.OTPCodeRepository,
 	identityRepo repository.IdentityRepository,

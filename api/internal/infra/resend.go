@@ -6,22 +6,20 @@ import (
 	"github.com/resend/resend-go/v3"
 )
 
-// EmailService handles sending emails via Resend
-type EmailService struct {
+type ResendEmailService struct {
 	client   *resend.Client
 	fromAddr string
 }
 
-// NewEmailService creates a new email service with Resend
-func NewEmailService(apiKey, fromAddr string) *EmailService {
-	return &EmailService{
+func NewResendEmailService(apiKey, fromAddr string) *ResendEmailService {
+	return &ResendEmailService{
 		client:   resend.NewClient(apiKey),
 		fromAddr: fromAddr,
 	}
 }
 
 // SendOTP sends an OTP code to the specified email address
-func (s *EmailService) SendOTP(to, code, projectName string) error {
+func (s *ResendEmailService) SendOTP(to, code, projectName string) error {
 	html := fmt.Sprintf(`
 		<div style="font-family: sans-serif; max-width: 400px; margin: 0 auto;">
 			<h2>Your verification code</h2>

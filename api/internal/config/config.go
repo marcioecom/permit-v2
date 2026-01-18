@@ -13,9 +13,13 @@ type Config struct {
 	Port          string `validate:"required"`
 	DatabaseURL   string `validate:"required"`
 	AdminEmail    string `validate:"required"`
-	ResendAPIKey  string `validate:"required"`
+	ResendAPIKey  string
 	EmailFrom     string
 	JWTPrivateKey string
+
+	UseMailHog bool
+	SMTPHost   string
+	SMTPPort   string
 }
 
 func Load() (*Config, error) {
@@ -28,6 +32,10 @@ func Load() (*Config, error) {
 		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
 		EmailFrom:     getEnv("EMAIL_FROM", "Permit <noreply@permit.marcio.run>"),
 		JWTPrivateKey: os.Getenv("JWT_PRIVATE_KEY"),
+
+		UseMailHog: os.Getenv("USE_MAILHOG") == "true",
+		SMTPHost:   getEnv("SMTP_HOST", "localhost"),
+		SMTPPort:   getEnv("SMTP_PORT", "1025"),
 	}
 
 	if err := config.validate(); err != nil {
