@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@permit/react": "workspace:*",
+    "@permitdev/react": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -1,4 +1,4 @@
-import { PermitButton, PermitProvider, usePermit } from "@permit/react";
+import { PermitButton, PermitProvider, usePermit } from "@permitdev/react";
 
 function AuthDemo() {
   const { isAuthenticated, user } = usePermit();
