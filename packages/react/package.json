@@ -1,5 +1,5 @@
 {
-  "name": "@permit/react",
+  "name": "@permitdev/react",
   "version": "0.1.0",
   "description": "React SDK for Permit authentication-as-a-service",
   "author": "Permit",
@@ -91,7 +91,8 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/marcioecom/permit"
+    "url": "https://github.com/marcioecom/permit-v2",
+    "directory": "packages/react"
   },
   "publishConfig": {
     "access": "public"
