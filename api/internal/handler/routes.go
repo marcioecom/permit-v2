@@ -12,6 +12,7 @@ type Handlers struct {
 	Auth    *AuthHandler
 	Session *SessionHandler
 	Project *ProjectHandler
+	JWKS    *JWKSHandler
 }
 
 type Services struct {
@@ -21,6 +22,7 @@ type Services struct {
 
 func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 	r.Get("/health", h.Health.GetHealth)
+	r.Get("/.well-known/jwks.json", h.JWKS.GetJWKS)
 
 	corsMiddleware := middleware.NewCORSMiddleware(services.ProjectRepo)
 	otpRateLimiter := middleware.RateLimitMiddleware(middleware.OTPLimiter, middleware.IPKeyExtractor)
