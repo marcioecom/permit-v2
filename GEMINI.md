@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2026-01-17
 
 ## Active Technologies
+- TypeScript 5.x (SDK), Go 1.24 (API) + React 18, jose (JWT), vitest, changesets (002-sdk-npm-deploy)
+- N/A (SDK is stateless) (002-sdk-npm-deploy)
 
 - Go 1.24, TypeScript 5.x + chi v5 (router), pgx v5 (database), resend-go (email), React 18, TailwindCSS (001-embedded-auth)
 
@@ -22,6 +24,7 @@ npm test && npm run lint
 Go 1.24, TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 002-sdk-npm-deploy: Added TypeScript 5.x (SDK), Go 1.24 (API) + React 18, jose (JWT), vitest, changesets
 
 - 001-embedded-auth: Added Go 1.24, TypeScript 5.x + chi v5 (router), pgx v5 (database), resend-go (email), React 18, TailwindCSS
 

@@ -19,6 +19,7 @@ type ProjectRepository interface {
 	UpdateWidget(ctx context.Context, w *models.Widget) error
 	CreateAPIKey(ctx context.Context, key *models.APIKey) error
 	GetAPIKeys(ctx context.Context, projectID string) ([]*models.APIKey, error)
+	GetAPIKeyByClientID(ctx context.Context, clientID string) (*models.APIKey, error)
 }
 
 type postgresProjectRepo struct {
@@ -128,6 +129,24 @@ func (r *postgresProjectRepo) GetAPIKeys(ctx context.Context, projectID string) 
 		keys = append(keys, k)
 	}
 	return keys, rows.Err()
+}
+
+func (r *postgresProjectRepo) GetAPIKeyByClientID(ctx context.Context, clientID string) (*models.APIKey, error) {
+	query := `
+		SELECT id, project_id, name, client_id, client_secret_hash, last_used_at, created_at
+		FROM project_api_keys WHERE client_id = $1
+	`
+	k := &models.APIKey{}
+	err := r.db.QueryRow(ctx, query, clientID).Scan(
+		&k.ID, &k.ProjectID, &k.Name, &k.ClientID, &k.ClientSecretHash, &k.LastUsedAt, &k.CreatedAt,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return k, nil
 }
 
 func GenerateClientID() string {

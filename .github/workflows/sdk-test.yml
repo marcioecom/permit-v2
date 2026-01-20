@@ -1,0 +1,45 @@
+name: SDK Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+
+jobs:
+  test:
+    name: Test SDK Packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build:sdk
+
+      - name: Run tests
+        run: pnpm test:sdk
+
+      - name: Typecheck
+        run: pnpm --filter @permitdev/react --filter @permitdev/server typecheck

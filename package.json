@@ -4,17 +4,26 @@
   "version": "0.0.0",
   "description": "Permit - Auth as a Service",
   "scripts": {
-    "dev": "pnpm --parallel --stream --filter @permit/react build:watch --filter playground dev",
+    "dev": "pnpm --parallel --stream --filter @permitdev/react build:watch --filter playground dev",
     "dev:playground": "pnpm --filter playground dev",
-    "dev:sdk": "pnpm --filter @permit/react dev",
+    "dev:sdk": "pnpm --filter @permitdev/react dev",
+    "dev:server-sdk": "pnpm --filter @permitdev/server dev",
     "dev:api": "cd api && go run cmd/server/main.go",
     "build": "pnpm --recursive build",
-    "build:sdk": "pnpm --filter @permit/react build",
-    "build:playground": "pnpm --filter playground build",
+    "build:sdk": "pnpm --filter @permitdev/react --filter @permitdev/server build",
+    "test": "pnpm --recursive test:run",
+    "test:sdk": "pnpm --filter @permitdev/react --filter @permitdev/server test:run",
     "typecheck": "pnpm --recursive typecheck",
-    "clean": "pnpm --recursive clean"
+    "clean": "pnpm --recursive clean",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "publish:packages": "pnpm build:sdk && changeset publish"
   },
-  "keywords": ["auth", "authentication", "permit"],
+  "keywords": [
+    "auth",
+    "authentication",
+    "permit"
+  ],
   "author": "Permit",
   "license": "MIT",
   "engines": {
@@ -22,6 +31,7 @@
     "pnpm": ">=8.0.0"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.0",
     "typescript": "^5.3.0"
   }
 }

@@ -76,6 +76,7 @@ func main() {
 		Auth:    handler.NewAuthHandler(authService),
 		Session: handler.NewSessionHandler(sessionService),
 		Project: handler.NewProjectHandler(projectService),
+		JWKS:    handler.NewJWKSHandler(jwtService, projectRepo),
 	}
 	services := &handler.Services{
 		JWTService:  jwtService,
