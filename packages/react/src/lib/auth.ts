@@ -1,6 +1,5 @@
-import type { User } from "@/context/PermitContext";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getUser, startOtp, verifyOtp } from "./api";
+import { useQuery } from "@tanstack/react-query";
+import { getUser } from "./api";
 
 // ============================================
 // Query Keys
@@ -14,60 +13,6 @@ export const authKeys = {
 // ============================================
 // Hooks
 // ============================================
-
-interface UseStartOtpOptions {
-  apiUrl: string;
-  projectId: string;
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
-}
-
-export const useStartOtp = ({
-  apiUrl,
-  projectId,
-  onSuccess,
-  onError,
-}: UseStartOtpOptions) => {
-  return useMutation({
-    mutationFn: (data: { email: string }) => startOtp(apiUrl, data, projectId),
-    onSuccess,
-    onError,
-  });
-};
-
-interface UseVerifyOtpOptions {
-  apiUrl: string;
-  projectId: string;
-  onSuccess?: (data: { token: string; user: User }) => void;
-  onError?: (error: Error) => void;
-}
-
-export const useVerifyOtp = ({
-  apiUrl,
-  projectId,
-  onSuccess,
-  onError,
-}: UseVerifyOtpOptions) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: { email: string; code: string }) =>
-      verifyOtp(apiUrl, data, projectId),
-    onSuccess: (response) => {
-      // Update user in cache
-      queryClient.setQueryData(authKeys.user(), {
-        id: response.user.id,
-        email: response.user.email,
-      });
-
-      onSuccess?.({
-        token: response.accessToken,
-        user: { id: response.user.id, email: response.user.email },
-      });
-    },
-    onError,
-  });
-};
 
 interface UseValidateTokenOptions {
   apiUrl: string;

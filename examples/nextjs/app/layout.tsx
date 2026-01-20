@@ -12,8 +12,7 @@ export default function RootLayout({
       <body>
         <PermitProvider
           projectId='01KF75AT7NRTTAGP96NXDQA4DG'
-          // clientId={process.env.NEXT_PUBLIC_PERMIT_CLIENT_ID || 'pk_demo'}
-          // baseUrl={process.env.NEXT_PUBLIC_PERMIT_BASE_URL || 'http://localhost:8080'}
+          config={{ apiUrl: 'http://localhost:8080/api/v1' }}
         >
           {children}
         </PermitProvider>

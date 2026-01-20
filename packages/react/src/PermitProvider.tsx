@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { PermitModal } from "./components/PermitModal";
-import { PermitContext, type User } from "./context/PermitContext";
+import { PermitContext, type User, type WidgetConfig } from "./context/PermitContext";
+import { ApiError, createApiClient } from "./lib/api-client";
 import { useValidateToken } from "./lib/auth";
 
 interface PermitConfig {
@@ -83,22 +84,20 @@ const PermitProviderInner = ({
     }
   }, [projectId]);
 
-  // Fetch widget config on mount
+  // Fetch widget config on mount using Axios client
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch(`${apiUrl}/projects/${projectId}/widget`);
-        if (!response.ok) {
-          if (response.status === 404) {
-            setConfigError("Invalid project ID");
-            return;
-          }
-          throw new Error("Failed to load configuration");
+        const api = createApiClient(apiUrl);
+        const data = await api.get<unknown, WidgetConfig>(`/projects/${projectId}/widget`);
+        setWidgetConfig(data);
+      } catch (err) {
+        const apiError = err as ApiError;
+        if (apiError.status === 404) {
+          setConfigError("Invalid project ID");
+        } else {
+          setConfigError(apiError.message || "Failed to load project configuration");
         }
-        const data = await response.json();
-        setWidgetConfig(data.data || data);
-      } catch {
-        setConfigError("Failed to load project configuration");
       }
     };
     fetchConfig();
@@ -134,6 +133,8 @@ const PermitProviderInner = ({
     setToken(null);
   };
 
+  const getAccessToken = () => token;
+
   const handleLoginSuccess = (newToken: string, newUser: User) => {
     localStorage.setItem(`permit_token_${projectId}`, newToken);
     localStorage.setItem(`permit_user_${projectId}`, JSON.stringify(newUser));
@@ -154,8 +155,11 @@ const PermitProviderInner = ({
         token,
         login,
         logout,
+        getAccessToken,
         widgetConfig,
         configError,
+        apiUrl,
+        projectId,
       }}
     >
       {children}

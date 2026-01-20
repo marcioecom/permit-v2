@@ -8,6 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { User } from "@/context/PermitContext";
+import { usePermit } from "@/hooks/usePermit";
 import { startOtp, verifyOtp } from "@/lib/api";
 import { ApiError } from "@/lib/api-client";
 import { AnimatePresence, motion } from "framer-motion";
@@ -20,10 +21,10 @@ import { GithubLight } from "./ui/svgs/githubLight";
 import { Google } from "./ui/svgs/google";
 
 interface PermitModalProps {
-  projectId: string;
-  apiUrl: string;
-  onClose: () => void;
-  onSuccess: (token: string, user: User) => void;
+  projectId?: string;
+  apiUrl?: string;
+  onClose?: () => void;
+  onSuccess?: (token: string, user: User) => void;
   widgetConfig?: {
     title?: string;
     subtitle?: string;
@@ -34,11 +35,14 @@ interface PermitModalProps {
 }
 
 export const PermitModal = ({
-  projectId,
-  apiUrl,
+  projectId: propProjectId,
+  apiUrl: propApiUrl,
   onClose,
   onSuccess,
 }: PermitModalProps) => {
+  const context = usePermit();
+  const projectId = propProjectId ?? context.projectId;
+  const apiUrl = propApiUrl ?? context.apiUrl;
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -71,10 +75,12 @@ export const PermitModal = ({
     try {
       const response = await verifyOtp(apiUrl, { email, code: otp }, projectId);
 
-      onSuccess(response.accessToken, {
+      const user = {
         id: response.user.id,
         email: response.user.email,
-      });
+      };
+
+      onSuccess?.(response.accessToken, user);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "Invalid verification code");

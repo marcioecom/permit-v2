@@ -93,4 +93,17 @@ export const handlers = [
   http.post(`${API_URL}/auth/logout`, () => {
     return HttpResponse.json({ message: "Logged out successfully" });
   }),
+
+  // Widget config
+  http.get(`${API_URL}/projects/:projectId/widget`, () => {
+    return HttpResponse.json({
+      data: {
+        title: "Test Project",
+        subtitle: "Please sign in",
+        enabledProviders: ["email"],
+        primaryColor: "#4f46e5",
+        logoUrl: null,
+      },
+    });
+  }),
 ];

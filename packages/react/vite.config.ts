@@ -2,8 +2,8 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 import { defineConfig } from "vite";
-import dts from "vite-plugin-dts";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
+import dts from "vite-plugin-dts";
 
 export default defineConfig({
   plugins: [
@@ -13,7 +13,10 @@ export default defineConfig({
       insertTypesEntry: true,
       include: ["src"],
     }),
-    cssInjectedByJsPlugin(),
+    cssInjectedByJsPlugin({
+      // Wrap CSS injection in IIFE that runs after "use client"
+      topExecutionPriority: false,
+    }),
   ],
   resolve: {
     alias: {

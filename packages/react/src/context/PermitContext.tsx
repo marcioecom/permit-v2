@@ -20,8 +20,11 @@ export interface PermitContextType {
   token: string | null;
   widgetConfig: WidgetConfig | null;
   configError: string | null;
+  apiUrl: string;
+  projectId: string;
   login: () => void;
   logout: () => void;
+  getAccessToken: () => string | null;
 }
 
 export const PermitContext = createContext<PermitContextType | undefined>(

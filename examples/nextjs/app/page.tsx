@@ -1,17 +1,17 @@
 'use client';
 
-import { PermitModal, usePermit } from '@permitdev/react';
+import { usePermit } from '@permitdev/react';
 import { useState } from 'react';
 
 export default function Home() {
-  const { user, isAuthenticated, isLoading, getAccessToken, logout } = usePermit();
+  const { login, logout, user, isAuthenticated, getAccessToken  } = usePermit();
   const [protectedData, setProtectedData] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchProtectedData = async () => {
     try {
       setFetchError(null);
-      const token = await getAccessToken();
+      const token = getAccessToken();
 
       const response = await fetch('/api/protected', {
         headers: {
@@ -31,23 +31,15 @@ export default function Home() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <main style={styles.main}>
-        <div style={styles.card}>
-          <p>Loading...</p>
-        </div>
-      </main>
-    );
-  }
-
   if (!isAuthenticated) {
     return (
       <main style={styles.main}>
         <div style={styles.card}>
           <h1 style={styles.title}>Permit SDK Example</h1>
           <p style={styles.subtitle}>Click below to authenticate</p>
-          <PermitModal />
+          <button style={styles.button} onClick={login}>
+            Sign In
+          </button>
         </div>
       </main>
     );

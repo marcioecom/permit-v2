@@ -1,24 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PermitModal } from "@/components/PermitModal";
-import { ThemeProvider } from "@/components/theme-provider";
-
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>{children}</ThemeProvider>
-    </QueryClientProvider>
-  );
-};
+import { renderWithPermit, screen, waitFor } from "@/testing/test-utils";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("PermitModal", () => {
   const mockOnClose = vi.fn();
@@ -29,14 +12,8 @@ describe("PermitModal", () => {
   });
 
   it("renders email form by default", () => {
-    render(
-      <PermitModal
-        projectId="test_project"
-        apiUrl="http://localhost:8080/api/v1"
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-      />,
-      { wrapper: createWrapper() }
+    renderWithPermit(
+      <PermitModal onClose={mockOnClose} onSuccess={mockOnSuccess} />
     );
 
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
@@ -46,14 +23,8 @@ describe("PermitModal", () => {
   });
 
   it("shows social login buttons", () => {
-    render(
-      <PermitModal
-        projectId="test_project"
-        apiUrl="http://localhost:8080/api/v1"
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-      />,
-      { wrapper: createWrapper() }
+    renderWithPermit(
+      <PermitModal onClose={mockOnClose} onSuccess={mockOnSuccess} />
     );
 
     expect(screen.getByRole("button", { name: /google/i })).toBeInTheDocument();
@@ -63,14 +34,8 @@ describe("PermitModal", () => {
   it("transitions to OTP step after submitting email", async () => {
     const user = userEvent.setup();
 
-    render(
-      <PermitModal
-        projectId="test_project"
-        apiUrl="http://localhost:8080/api/v1"
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-      />,
-      { wrapper: createWrapper() }
+    renderWithPermit(
+      <PermitModal onClose={mockOnClose} onSuccess={mockOnSuccess} />
     );
 
     // Enter email
@@ -90,14 +55,8 @@ describe("PermitModal", () => {
   it("shows verification code label in OTP step", async () => {
     const user = userEvent.setup();
 
-    render(
-      <PermitModal
-        projectId="test_project"
-        apiUrl="http://localhost:8080/api/v1"
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-      />,
-      { wrapper: createWrapper() }
+    renderWithPermit(
+      <PermitModal onClose={mockOnClose} onSuccess={mockOnSuccess} />
     );
 
     // Enter email and submit
@@ -116,14 +75,8 @@ describe("PermitModal", () => {
   it("allows going back from OTP step", async () => {
     const user = userEvent.setup();
 
-    render(
-      <PermitModal
-        projectId="test_project"
-        apiUrl="http://localhost:8080/api/v1"
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-      />,
-      { wrapper: createWrapper() }
+    renderWithPermit(
+      <PermitModal onClose={mockOnClose} onSuccess={mockOnSuccess} />
     );
 
     // Go to OTP step
@@ -150,14 +103,8 @@ describe("PermitModal", () => {
   it("displays sign in button in OTP step", async () => {
     const user = userEvent.setup();
 
-    render(
-      <PermitModal
-        projectId="test_project"
-        apiUrl="http://localhost:8080/api/v1"
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-      />,
-      { wrapper: createWrapper() }
+    renderWithPermit(
+      <PermitModal onClose={mockOnClose} onSuccess={mockOnSuccess} />
     );
 
     // Enter email and submit
@@ -173,5 +120,13 @@ describe("PermitModal", () => {
         screen.getByRole("button", { name: /sign in/i })
       ).toBeInTheDocument();
     });
+  });
+
+  it("uses apiUrl from context when not provided as prop", () => {
+    // This test verifies the core fix - PermitModal gets apiUrl from context
+    renderWithPermit(<PermitModal />);
+
+    // If we get here without error, the modal successfully got apiUrl/projectId from context
+    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
   });
 });
