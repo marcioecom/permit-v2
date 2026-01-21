@@ -3,18 +3,16 @@ name: SDK Publish
 on:
   push:
     branches: [main]
+  workflow_dispatch: # Allow manual trigger for debugging
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  release:
-    name: Release
+  publish:
+    name: Publish to NPM
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout
