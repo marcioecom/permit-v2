@@ -98,7 +98,7 @@
 - [x] T032 [US2] Update `packages/server/package.json` repository and publishConfig
 - [x] T033 [US2] Create `packages/react/README.md` with installation and usage docs
 - [x] T034 [US2] Create `packages/server/README.md` with installation and usage docs
-- [ ] T035 [US2] Verify publish dry-run: `pnpm publish --dry-run -r`
+- [x] T035 [US2] Verify publish dry-run: `pnpm publish --dry-run -r`
 
 **Checkpoint**: CI/CD configured - PRs trigger tests, tags publish to NPM
 
@@ -119,7 +119,7 @@
 - [x] T040 [US3] Create `examples/nextjs/app/page.tsx` with login UI using PermitModal
 - [x] T041 [US3] Create `examples/nextjs/app/api/protected/route.ts` with withPermitAuth middleware
 - [x] T042 [US3] Create `examples/nextjs/README.md` with setup instructions
-- [ ] T043 [US3] Test example: run locally and complete full auth flow
+- [x] T043 [US3] Test example: run locally and complete full auth flow
 
 **Checkpoint**: Example app works end-to-end with local SDK packages
 
@@ -133,21 +133,21 @@
 
 ### Tests for API
 
-- [ ] T044 [P] [US4] Add test: OTP start request in `api/internal/service/auth_service_test.go`
-- [ ] T045 [P] [US4] Add test: OTP verify with valid code in `api/internal/service/auth_service_test.go`
-- [ ] T046 [P] [US4] Add test: OTP verify with expired code in `api/internal/service/auth_service_test.go`
-- [ ] T047 [P] [US4] Add test: token refresh flow in `api/internal/service/session_service_test.go`
+- [x] T044 [P] [US4] Add test: OTP start request in `api/internal/service/auth_service_test.go`
+- [x] T045 [P] [US4] Add test: OTP verify with valid code in `api/internal/service/auth_service_test.go`
+- [x] T046 [P] [US4] Add test: OTP verify with expired code in `api/internal/service/auth_service_test.go`
+- [x] T047 [P] [US4] Add test: token refresh flow in `api/internal/service/session_service_test.go`
 
 ### Tests for Client SDK
 
-- [ ] T048 [P] [US4] Add test: token refresh before expiry in `packages/react/src/__tests__/PermitProvider.test.tsx`
-- [ ] T049 [P] [US4] Add test: logout clears tokens in `packages/react/src/__tests__/PermitProvider.test.tsx`
+- [x] T048 [P] [US4] Add test: token refresh before expiry in `packages/react/src/__tests__/PermitProvider.test.tsx`
+- [x] T049 [P] [US4] Add test: logout clears tokens in `packages/react/src/__tests__/PermitProvider.test.tsx`
 
 ### Test Runner Integration
 
-- [ ] T050 [US4] Verify all API tests pass: `cd api && go test ./...`
-- [ ] T051 [US4] Verify all SDK tests pass: `pnpm test:sdk`
-- [ ] T052 [US4] Verify CI workflow runs tests correctly on PR
+- [x] T050 [US4] Verify all API tests pass: `cd api && go test ./...`
+- [x] T051 [US4] Verify all SDK tests pass: `pnpm test:sdk`
+- [x] T052 [US4] Verify CI workflow runs tests correctly on PR
 
 **Checkpoint**: 80%+ coverage on critical auth paths, CI enforces quality
 
@@ -157,10 +157,10 @@
 
 **Purpose**: Final cleanup and documentation
 
-- [ ] T053 [P] Update root `README.md` with SDK package links and quickstart
-- [ ] T054 [P] Create `CONTRIBUTING.md` with development workflow using changesets
-- [ ] T055 Run quickstart.md validation: follow steps and verify they work
-- [ ] T056 Clean up any TODO comments in codebase
+- [x] T053 [P] Update root `README.md` with SDK package links and quickstart
+- [x] T054 [P] Create `CONTRIBUTING.md` with development workflow using changesets
+- [x] T055 Run quickstart.md validation: follow steps and verify they work
+- [x] T056 Clean up any TODO comments in codebase
 
 ---
 

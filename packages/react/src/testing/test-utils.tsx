@@ -40,7 +40,10 @@ const createPermitWrapper = (options: PermitWrapperOptions = {}) => {
     options;
 
   return ({ children }: WrapperProps) => (
-    <PermitProvider projectId={projectId} config={{ apiUrl }}>
+    <PermitProvider
+      projectId={projectId}
+      config={{ apiUrl, disableShadowDOM: true }}
+    >
       {children}
     </PermitProvider>
   );

@@ -1,13 +1,13 @@
-# @permit/react
+# @permitdev/react
 
 React SDK for Permit Embedded Authentication.
 
 ## Installation
 
 ```bash
-npm install @permit/react
+npm install @permitdev/react
 # or
-pnpm add @permit/react
+pnpm add @permitdev/react
 ```
 
 ## Quick Start
@@ -15,7 +15,7 @@ pnpm add @permit/react
 ### 1. Wrap your app with PermitProvider
 
 ```tsx
-import { PermitProvider } from '@permit/react';
+import { PermitProvider } from '@permitdev/react';
 
 function App() {
   return (
@@ -32,7 +32,7 @@ function App() {
 ### 2. Use the usePermit hook
 
 ```tsx
-import { usePermit } from '@permit/react';
+import { usePermit } from '@permitdev/react';
 
 function Profile() {
   const { isAuthenticated, user, login, logout, isLoading } = usePermit();
@@ -55,7 +55,7 @@ function Profile() {
 ### 3. Use the PermitButton component
 
 ```tsx
-import { PermitButton } from '@permit/react';
+import { PermitButton } from '@permitdev/react';
 
 function Header() {
   return <PermitButton />;

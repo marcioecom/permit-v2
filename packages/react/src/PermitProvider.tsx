@@ -1,13 +1,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { PermitModal } from "./components/PermitModal";
+import { ShadowRootProvider } from "./components/ShadowRoot";
 import { PermitContext, type User, type WidgetConfig } from "./context/PermitContext";
+import permitStyles from "./global.css?inline";
 import { ApiError, createApiClient } from "./lib/api-client";
 import { useValidateToken } from "./lib/auth";
 
 interface PermitConfig {
   apiUrl?: string;
   theme?: "light" | "dark";
+  /** Disable Shadow DOM isolation for styles. Useful for testing environments. */
+  disableShadowDOM?: boolean;
 }
 
 interface PermitProviderProps {
@@ -40,10 +44,15 @@ export const PermitProvider = ({
   // Create query client once per provider instance
   const queryClient = useMemo(() => createQueryClient(), []);
   const apiUrl = config?.apiUrl || DEFAULT_API_URL;
+  const disableShadowDOM = config?.disableShadowDOM ?? false;
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PermitProviderInner projectId={projectId} apiUrl={apiUrl}>
+      <PermitProviderInner
+        projectId={projectId}
+        apiUrl={apiUrl}
+        disableShadowDOM={disableShadowDOM}
+      >
         {children}
       </PermitProviderInner>
     </QueryClientProvider>
@@ -53,12 +62,14 @@ export const PermitProvider = ({
 interface PermitProviderInnerProps {
   projectId: string;
   apiUrl: string;
+  disableShadowDOM: boolean;
   children: ReactNode;
 }
 
 const PermitProviderInner = ({
   projectId,
   apiUrl,
+  disableShadowDOM,
   children,
 }: PermitProviderInnerProps) => {
   const [user, setUser] = useState<User | null>(null);
@@ -165,13 +176,15 @@ const PermitProviderInner = ({
       {children}
 
       {isModalOpen && (
-        <PermitModal
-          projectId={projectId}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={handleLoginSuccess}
-          apiUrl={apiUrl}
-          widgetConfig={widgetConfig}
-        />
+        <ShadowRootProvider styles={permitStyles} disabled={disableShadowDOM}>
+          <PermitModal
+            projectId={projectId}
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={handleLoginSuccess}
+            apiUrl={apiUrl}
+            widgetConfig={widgetConfig}
+          />
+        </ShadowRootProvider>
       )}
     </PermitContext.Provider>
   );

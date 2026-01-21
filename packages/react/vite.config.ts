@@ -2,7 +2,6 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 import { defineConfig } from "vite";
-import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
@@ -12,10 +11,10 @@ export default defineConfig({
     dts({
       insertTypesEntry: true,
       include: ["src"],
-    }),
-    cssInjectedByJsPlugin({
-      // Wrap CSS injection in IIFE that runs after "use client"
-      topExecutionPriority: false,
+      exclude: ["src/__tests__", "src/testing", "src/App.tsx", "src/main.tsx"],
+      compilerOptions: {
+        declarationMap: false,
+      },
     }),
   ],
   resolve: {
@@ -47,6 +46,6 @@ export default defineConfig({
         },
       },
     },
-    sourcemap: true,
+    sourcemap: false,
   },
 });

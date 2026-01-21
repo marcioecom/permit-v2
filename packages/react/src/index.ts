@@ -1,5 +1,8 @@
-// CSS - será bundled e injetado automaticamente
-import "./global.css";
+// CSS as inline string for Shadow DOM injection
+import permitStyles from "./global.css?inline";
+
+// Export styles for Shadow DOM
+export { permitStyles };
 
 // Context and Types
 export { PermitContext, type User } from "./context/PermitContext";
@@ -13,4 +16,7 @@ export { PermitProvider } from "./PermitProvider";
 // Components
 export { PermitButton } from "./components/PermitButton";
 export { PermitModal } from "./components/PermitModal";
+
+// Shadow DOM utilities
+export { ShadowRootProvider, useShadowContainer } from "./components/ShadowRoot";
 
