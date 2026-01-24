@@ -80,7 +80,8 @@
     "directory": "packages/server"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "engines": {
     "node": ">=18.0.0"

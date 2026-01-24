@@ -94,6 +94,7 @@
     "directory": "packages/react"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }
