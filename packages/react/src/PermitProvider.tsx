@@ -2,7 +2,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { PermitModal } from "./components/PermitModal";
 import { ShadowRootProvider } from "./components/ShadowRoot";
-import { PermitContext, type User, type WidgetConfig } from "./context/PermitContext";
+import {
+  PermitContext,
+  type User,
+  type WidgetConfig,
+} from "./context/PermitContext";
 import permitStyles from "./global.css?inline";
 import { ApiError, createApiClient } from "./lib/api-client";
 import { useValidateToken } from "./lib/auth";
@@ -20,7 +24,7 @@ interface PermitProviderProps {
   children: ReactNode;
 }
 
-const DEFAULT_API_URL = "http://localhost:8080/api/v1";
+const DEFAULT_API_URL = "https://api-permit.marcio.run/api/v1";
 
 // Create a stable query client outside component to avoid recreation
 const createQueryClient = () =>
@@ -100,14 +104,18 @@ const PermitProviderInner = ({
     const fetchConfig = async () => {
       try {
         const api = createApiClient(apiUrl);
-        const data = await api.get<unknown, WidgetConfig>(`/projects/${projectId}/widget`);
+        const data = await api.get<unknown, WidgetConfig>(
+          `/projects/${projectId}/widget`,
+        );
         setWidgetConfig(data);
       } catch (err) {
         const apiError = err as ApiError;
         if (apiError.status === 404) {
           setConfigError("Invalid project ID");
         } else {
-          setConfigError(apiError.message || "Failed to load project configuration");
+          setConfigError(
+            apiError.message || "Failed to load project configuration",
+          );
         }
       }
     };
@@ -120,7 +128,7 @@ const PermitProviderInner = ({
       apiUrl,
       token,
       enabled: !!token,
-    }
+    },
   );
 
   // Clear invalid token
