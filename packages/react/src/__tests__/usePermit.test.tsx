@@ -6,7 +6,12 @@ import { describe, expect, it, vi } from "vitest";
 
 describe("usePermit", () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <PermitProvider projectId="test_project">{children}</PermitProvider>
+    <PermitProvider
+      projectId="test_project"
+      config={{ apiUrl: "http://localhost:8080/api/v1" }}
+    >
+      {children}
+    </PermitProvider>
   );
 
   it("returns context values when used inside PermitProvider", () => {
