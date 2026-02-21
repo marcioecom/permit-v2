@@ -24,7 +24,7 @@ export interface PermitContextType {
   projectId: string;
   login: () => void;
   logout: () => void;
-  getAccessToken: () => string | null;
+  accessToken: string | null;
 }
 
 export const PermitContext = createContext<PermitContextType | undefined>(

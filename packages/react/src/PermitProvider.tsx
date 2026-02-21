@@ -42,7 +42,7 @@ const createQueryClient = () =>
 
 export const PermitProvider = ({
   projectId,
-  config,
+  config = {},
   children,
 }: PermitProviderProps) => {
   // Create query client once per provider instance
@@ -152,8 +152,6 @@ const PermitProviderInner = ({
     setToken(null);
   };
 
-  const getAccessToken = () => token;
-
   const handleLoginSuccess = (newToken: string, newUser: User) => {
     localStorage.setItem(`permit_token_${projectId}`, newToken);
     localStorage.setItem(`permit_user_${projectId}`, JSON.stringify(newUser));
@@ -174,7 +172,7 @@ const PermitProviderInner = ({
         token,
         login,
         logout,
-        getAccessToken,
+        accessToken: token,
         widgetConfig,
         configError,
         apiUrl,
