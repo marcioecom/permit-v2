@@ -24,6 +24,7 @@ type AuthService struct {
 	userRepo     repository.UserRepository
 	otpRepo      repository.OTPCodeRepository
 	identityRepo repository.IdentityRepository
+	projectRepo  repository.ProjectRepository
 }
 
 func NewAuthService(
@@ -32,6 +33,7 @@ func NewAuthService(
 	userRepo repository.UserRepository,
 	otpRepo repository.OTPCodeRepository,
 	identityRepo repository.IdentityRepository,
+	projectRepo repository.ProjectRepository,
 ) *AuthService {
 	return &AuthService{
 		jwtService:   jwtService,
@@ -39,16 +41,27 @@ func NewAuthService(
 		userRepo:     userRepo,
 		otpRepo:      otpRepo,
 		identityRepo: identityRepo,
+		projectRepo:  projectRepo,
 	}
 }
 
 type CreateAuthInput struct {
-	Email       string
-	ProjectID   string
-	ProjectName string
+	Email     string
+	ProjectID string
+	IPAddress string
+	UserAgent string
 }
 
 func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) error {
+	project, err := s.projectRepo.GetByID(ctx, input.ProjectID)
+	if err != nil {
+		return err
+	}
+
+	if project == nil {
+		return fmt.Errorf("project_not_found")
+	}
+
 	user, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return err
@@ -85,14 +98,25 @@ func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) 
 		return err
 	}
 
-	projectName := input.ProjectName
-	if projectName == "" {
-		projectName = "Permit"
-	}
-
-	if err := s.emailService.SendOTP(input.Email, code, projectName); err != nil {
+	if err := s.emailService.SendOTP(input.Email, code, project.Name); err != nil {
 		log.Warn().Err(err).Str("email", input.Email).Msg("OTP creation failed")
 		return fmt.Errorf("email_delivery_failed")
+	}
+
+	// Log auth event
+	err = s.projectRepo.InsertAuthLog(ctx, &models.AuthLog{
+		ID:        ulid.Make().String(),
+		ProjectID: input.ProjectID,
+		UserID:    userID,
+		UserEmail: input.Email,
+		EventType: "login",
+		Status:    "OTP_SENT",
+		IPAddress: input.IPAddress,
+		UserAgent: input.UserAgent,
+		CreatedAt: time.Now(),
+	})
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to log auth event")
 	}
 
 	return nil
@@ -101,6 +125,8 @@ func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) 
 type VerifyAuthInput struct {
 	Code      string
 	ProjectID string
+	IPAddress string
+	UserAgent string
 }
 
 type VerifyAuthOutput struct {
@@ -114,20 +140,40 @@ type UserInfo struct {
 	Email string `json:"email"`
 }
 
+func (s *AuthService) logAuthEvent(ctx context.Context, projectID, userID, email, eventType, status, ip, ua string) {
+	err := s.projectRepo.InsertAuthLog(ctx, &models.AuthLog{
+		ID:        ulid.Make().String(),
+		ProjectID: projectID,
+		UserID:    userID,
+		UserEmail: email,
+		EventType: eventType,
+		Status:    status,
+		IPAddress: ip,
+		UserAgent: ua,
+		CreatedAt: time.Now(),
+	})
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to log auth event")
+	}
+}
+
 func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) (*VerifyAuthOutput, error) {
 	otp, err := s.otpRepo.GetByProjectAndCode(ctx, input.ProjectID, input.Code)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			s.logAuthEvent(ctx, input.ProjectID, "", "", "login", "FAILED", input.IPAddress, input.UserAgent)
 			return nil, fmt.Errorf("invalid_code")
 		}
 		return nil, err
 	}
 
 	if otp.UsedAt != nil {
+		s.logAuthEvent(ctx, input.ProjectID, otp.UserID, "", "login", "FAILED", input.IPAddress, input.UserAgent)
 		return nil, fmt.Errorf("code_already_used")
 	}
 
 	if time.Now().After(otp.ExpiresAt) {
+		s.logAuthEvent(ctx, input.ProjectID, otp.UserID, "", "login", "EXPIRED", input.IPAddress, input.UserAgent)
 		return nil, fmt.Errorf("code_expired")
 	}
 
@@ -161,6 +207,13 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 	if err != nil {
 		return nil, fmt.Errorf("token_generation_failed")
 	}
+
+	// Upsert project_users to track login count and last_login
+	if err := s.projectRepo.UpsertProjectUser(ctx, input.ProjectID, user.ID, "email"); err != nil {
+		log.Warn().Err(err).Str("userId", user.ID).Str("projectId", input.ProjectID).Msg("failed to upsert project user")
+	}
+
+	s.logAuthEvent(ctx, input.ProjectID, user.ID, user.Email, "login", "SUCCESS", input.IPAddress, input.UserAgent)
 
 	return &VerifyAuthOutput{
 		AccessToken:  accessToken,

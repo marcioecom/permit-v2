@@ -24,13 +24,16 @@ interface PermitModalProps {
   projectId?: string;
   apiUrl?: string;
   onClose?: () => void;
-  onSuccess?: (token: string, user: User) => void;
+  onSuccess?: (accessToken: string, refreshToken: string, user: User) => void;
   widgetConfig?: {
     title?: string;
     subtitle?: string;
     enabledProviders?: string[];
     primaryColor?: string;
     logoUrl?: string;
+    showSecuredBadge?: boolean;
+    termsUrl?: string;
+    privacyUrl?: string;
   } | null;
 }
 
@@ -39,10 +42,12 @@ export const PermitModal = ({
   apiUrl: propApiUrl,
   onClose,
   onSuccess,
+  widgetConfig: propWidgetConfig,
 }: PermitModalProps) => {
   const context = usePermit();
   const projectId = propProjectId ?? context.projectId;
   const apiUrl = propApiUrl ?? context.apiUrl;
+  const widgetConfig = propWidgetConfig ?? context.widgetConfig;
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -80,7 +85,7 @@ export const PermitModal = ({
         email: response.user.email,
       };
 
-      onSuccess?.(response.accessToken, user);
+      onSuccess?.(response.accessToken, response.refreshToken, user);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "Invalid verification code");
@@ -98,6 +103,7 @@ export const PermitModal = ({
           loading={loading}
           error={error}
           handleSendEmail={handleSendEmail}
+          primaryColor={widgetConfig?.primaryColor}
         />
       );
     }
@@ -111,6 +117,7 @@ export const PermitModal = ({
         loading={loading}
         error={error}
         handleVerifyOtp={handleVerifyOtp}
+        primaryColor={widgetConfig?.primaryColor}
       />
     );
   }
@@ -124,56 +131,88 @@ export const PermitModal = ({
       >
         <DialogHeader>
           <div className="flex justify-center">
-            <Lock />
+            {widgetConfig?.logoUrl ? (
+              <img src={widgetConfig.logoUrl} alt="Logo" className="h-10 w-auto" />
+            ) : (
+              <Lock />
+            )}
           </div>
           <DialogTitle className="text-center text-2xl mt-4">
-            Sign in to Permit
+            {widgetConfig?.title || "Sign in to Permit"}
           </DialogTitle>
           {step === "email" && (
             <p className="text-center text-sm text-muted-foreground">
-              Welcome to Permit! Please sign in to continue.
+              {widgetConfig?.subtitle || "Welcome to Permit! Please sign in to continue."}
             </p>
           )}
         </DialogHeader>
 
-        {/* Socials Login */}
-        {step === "email" && (
-          <>
-            <div className="flex justify-center gap-4 mt-4">
-              <Button variant="outline">
-                <Google /> Google
-              </Button>
-              <Button variant="outline">
-                {theme === "dark" ? <GithubDark /> : <GithubLight />}
-                GitHub
-              </Button>
-            </div>
+        {/* Socials Login - only show if social providers are enabled */}
+        {step === "email" && (() => {
+          const providers = widgetConfig?.enabledProviders ?? [];
+          const hasGoogle = providers.includes("google");
+          const hasGithub = providers.includes("github");
+          const hasSocial = hasGoogle || hasGithub;
 
-            {/* Separator */}
-            <div className="flex justify-center items-center mt-2 gap-4">
-              <hr className="w-2/5 border-t border-gray-200 dark:border-neutral-700" />
-              <p className="text-sm text-muted-foreground">or</p>
-              <hr className="w-2/5 border-t border-gray-200 dark:border-neutral-700" />
-            </div>
-          </>
-        )}
+          if (!hasSocial) return null;
+
+          return (
+            <>
+              <div className="flex justify-center gap-4 mt-4">
+                {hasGoogle && (
+                  <Button variant="outline" disabled title="Coming soon">
+                    <Google /> Google
+                  </Button>
+                )}
+                {hasGithub && (
+                  <Button variant="outline" disabled title="Coming soon">
+                    {theme === "dark" ? <GithubDark /> : <GithubLight />}
+                    GitHub
+                  </Button>
+                )}
+              </div>
+
+              {/* Separator */}
+              <div className="flex justify-center items-center mt-2 gap-4">
+                <hr className="w-2/5 border-t border-gray-200 dark:border-neutral-700" />
+                <p className="text-sm text-muted-foreground">or</p>
+                <hr className="w-2/5 border-t border-gray-200 dark:border-neutral-700" />
+              </div>
+            </>
+          );
+        })()}
 
         <AnimatePresence mode="wait">{showCurrentStep()}</AnimatePresence>
 
         {/* Footer */}
-        <div className="flex justify-center mt-4">
-          <p className="text-sm text-muted-foreground">
-            Secured by{" "}
-            <a
-              href="https://permit.marcio.run"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
-            >
-              Permit
-            </a>
-          </p>
-        </div>
+        {/* Terms and Privacy links */}
+        {(widgetConfig?.termsUrl || widgetConfig?.privacyUrl) && (
+          <div className="flex justify-center gap-2 mt-4 text-xs text-muted-foreground">
+            {widgetConfig.termsUrl && (
+              <a href={widgetConfig.termsUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Terms</a>
+            )}
+            {widgetConfig.termsUrl && widgetConfig.privacyUrl && <span>-</span>}
+            {widgetConfig.privacyUrl && (
+              <a href={widgetConfig.privacyUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy</a>
+            )}
+          </div>
+        )}
+
+        {(widgetConfig?.showSecuredBadge !== false) && (
+          <div className="flex justify-center mt-2">
+            <p className="text-sm text-muted-foreground">
+              Secured by{" "}
+              <a
+                href="https://permit.marcio.run"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              >
+                Permit
+              </a>
+            </p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -185,12 +224,14 @@ function EmailFormStep({
   loading,
   error,
   handleSendEmail,
+  primaryColor,
 }: {
   email: string;
   setEmail: (email: string) => void;
   loading: boolean;
   error: string | null;
   handleSendEmail: (e: React.FormEvent) => void;
+  primaryColor?: string;
 }) {
   return (
     <motion.form
@@ -213,13 +254,14 @@ function EmailFormStep({
         <Input
           id="email"
           type="email"
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           autoFocus
         />
       </div>
-      <Button type="submit" disabled={loading} className="w-full mt-1">
+      <Button type="submit" disabled={loading} className="w-full mt-1" style={primaryColor ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}>
         {loading ? "Sending..." : "Continue"}
       </Button>
     </motion.form>
@@ -234,6 +276,7 @@ function OTPFormStep({
   loading,
   error,
   handleVerifyOtp,
+  primaryColor,
 }: {
   email: string;
   otp: string;
@@ -242,6 +285,7 @@ function OTPFormStep({
   loading: boolean;
   error: string | null;
   handleVerifyOtp: (e: React.FormEvent) => void;
+  primaryColor?: string;
 }) {
   return (
     <motion.form
@@ -285,6 +329,7 @@ function OTPFormStep({
         type="submit"
         disabled={loading || otp.length !== 6}
         className="w-full"
+        style={primaryColor ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
       >
         {loading ? "Verifying..." : "Sign in"}
       </Button>

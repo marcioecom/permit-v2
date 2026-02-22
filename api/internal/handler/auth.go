@@ -42,9 +42,13 @@ func (h *AuthHandler) OtpStart(w http.ResponseWriter, r *http.Request) {
 	err := h.service.CreateOTPCode(r.Context(), service.CreateAuthInput{
 		Email:     req.Email,
 		ProjectID: req.ProjectID,
+		IPAddress: r.RemoteAddr,
+		UserAgent: r.UserAgent(),
 	})
 	if err != nil {
 		log.Warn().Err(err).Str("email", req.Email).Msg("OTP creation failed")
+		writeError(w, http.StatusBadRequest, "otp_creation_failed", "Failed to create OTP code")
+		return
 	}
 
 	writeSuccess(w, http.StatusOK, map[string]string{
@@ -62,6 +66,8 @@ func (h *AuthHandler) OtpVerify(w http.ResponseWriter, r *http.Request) {
 	output, err := h.service.VerifyOTPCode(r.Context(), service.VerifyAuthInput{
 		Code:      req.Code,
 		ProjectID: req.ProjectID,
+		IPAddress: r.RemoteAddr,
+		UserAgent: r.UserAgent(),
 	})
 	if err != nil {
 		log.Warn().Err(err).Str("projectId", req.ProjectID).Msg("OTP verification failed")

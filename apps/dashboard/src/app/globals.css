@@ -1,26 +1,122 @@
+/* @import url(`https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,400&f[]=satoshi@700,500,400&display=swap`); */
 @import "tailwindcss";
 
+/* Fonts - Cabinet Grotesk (display) + Satoshi (body) from Fontshare */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Design System Colors */
+  --background: #FDFDFD;
+  --foreground: #0f172a;
+  --accent: #2563eb;
+  --accent-light: rgba(37, 99, 235, 0.05);
+
+  /* Fonts */
+  --font-display: 'Cabinet Grotesk', sans-serif;
+  --font-body: 'Satoshi', sans-serif;
+
+  /* Semantic */
+  --border-color: rgba(241, 245, 249, 1);
+  --glass-bg: rgba(255, 255, 255, 0.8);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-accent: var(--accent);
+  --font-sans: 'Satoshi', sans-serif;
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base Styles */
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Glass Card Component */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+}
+
+/* Navigation Link Active State */
+.nav-link-active {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-right: 2px solid var(--accent);
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+/* View Transitions */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(main-content) {
+  animation: 0.3s ease-out both fade-out;
+}
+
+::view-transition-new(main-content) {
+  animation: 0.3s ease-in 0.1s both fade-in;
+}
+
+::view-transition-old(sidebar),
+::view-transition-new(sidebar),
+::view-transition-old(main-header),
+::view-transition-new(main-header) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(10px);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Toggle Switch */
+.toggle-checkbox:checked+.toggle-label {
+  background-color: var(--accent);
+}
+
+.toggle-checkbox:checked+.toggle-label::after {
+  transform: translateX(100%);
 }

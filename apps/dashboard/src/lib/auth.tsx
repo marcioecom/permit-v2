@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import axios, { AxiosInstance } from "axios";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Create axios instance with interceptors
   const api = React.useMemo(() => {
     const instance = axios.create({
-      baseURL: `${API_URL}/api/v1`,
+      baseURL: `${API_URL}`,
       headers: { "Content-Type": "application/json" },
     });
 
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return config;
     });
 
-    // Response interceptor for auto-refresh  
+    // Response interceptor for auto-refresh
     instance.interceptors.response.use(
       (response) => response,
       async (error) => {
@@ -63,14 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { refreshToken } = JSON.parse(stored);
             if (refreshToken) {
               try {
-                const res = await axios.post(`${API_URL}/api/v1/auth/refresh`, { refreshToken });
+                const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
                 const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
-                
+
                 const parsedStored = JSON.parse(stored);
                 parsedStored.accessToken = newAccessToken;
                 parsedStored.refreshToken = newRefreshToken;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedStored));
-                
+
                 setState(prev => ({ ...prev, accessToken: newAccessToken, refreshToken: newRefreshToken }));
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                 return instance(originalRequest);
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           return;
         }
-      } catch {}
+      } catch { }
     }
     setState(prev => ({ ...prev, isLoading: false }));
   }, []);
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshTokens = useCallback(async (): Promise<boolean> => {
     if (!state.refreshToken) return false;
     try {
-      const res = await axios.post(`${API_URL}/api/v1/auth/refresh`, { refreshToken: state.refreshToken });
+      const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: state.refreshToken });
       const { accessToken, refreshToken: newRefreshToken } = res.data;
       login(accessToken, newRefreshToken, state.user!);
       return true;

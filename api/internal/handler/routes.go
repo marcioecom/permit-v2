@@ -8,11 +8,12 @@ import (
 )
 
 type Handlers struct {
-	Health  *HealthHandler
-	Auth    *AuthHandler
-	Session *SessionHandler
-	Project *ProjectHandler
-	JWKS    *JWKSHandler
+	Health    *HealthHandler
+	Auth      *AuthHandler
+	Session   *SessionHandler
+	Project   *ProjectHandler
+	JWKS      *JWKSHandler
+	Dashboard *DashboardHandler
 }
 
 type Services struct {
@@ -52,6 +53,22 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 				r.Patch("/{id}/widget", h.Project.UpdateWidget)
 				r.Post("/{id}/api-keys", h.Project.CreateAPIKey)
 			})
+		})
+
+		// Dashboard routes (owner-authenticated)
+		r.Route("/dashboard", func(r chi.Router) {
+			r.Use(authMiddleware.RequireAuth)
+
+			r.Get("/projects", h.Dashboard.ListProjects)
+			r.Get("/projects/{id}", h.Dashboard.GetProject)
+			r.Get("/projects/{id}/users", h.Dashboard.ListProjectUsers)
+			r.Get("/projects/{id}/api-keys", h.Dashboard.ListAPIKeys)
+			r.Delete("/projects/{id}/api-keys/{keyId}", h.Dashboard.RevokeAPIKey)
+
+			r.Get("/users", h.Dashboard.ListAllUsers)
+			r.Get("/logs", h.Dashboard.ListAuthLogs)
+			r.Get("/stats", h.Dashboard.GetDashboardStats)
+			r.Get("/users/stats", h.Dashboard.GetUserStats)
 		})
 	})
 }

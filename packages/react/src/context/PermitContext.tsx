@@ -11,6 +11,9 @@ export interface WidgetConfig {
   enabledProviders?: string[];
   primaryColor?: string;
   logoUrl?: string;
+  showSecuredBadge?: boolean;
+  termsUrl?: string;
+  privacyUrl?: string;
 }
 
 export interface PermitContextType {

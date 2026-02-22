@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { PermitProvider } from '@permitdev/react';
+import { PermitProvider } from "@permitdev/react";
 
 export default function RootLayout({
   children,
@@ -11,7 +11,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <PermitProvider
-          projectId='01KF75AT7NRTTAGP96NXDQA4DG'
+          projectId="01KJ0A0G5WN4F396TATZVGMP67"
           config={{ apiUrl: 'http://localhost:8080/api/v1' }}
         >
           {children}

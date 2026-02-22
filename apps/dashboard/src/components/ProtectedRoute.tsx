@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/auth";
+import { usePermit } from "@permitdev/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = usePermit();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -21,10 +21,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin h-8 w-8 border-2 border-indigo-500 rounded-full border-t-transparent" />
-          <span className="text-zinc-400 text-sm">Loading...</span>
+          <div className="animate-spin h-8 w-8 border-2 border-[var(--accent)] rounded-full border-t-transparent" />
+          <span className="text-slate-400 text-sm">Loading...</span>
         </div>
       </div>
     );

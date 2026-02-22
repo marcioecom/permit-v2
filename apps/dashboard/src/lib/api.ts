@@ -18,6 +18,7 @@ export interface ProjectUser {
   id: string;
   email: string;
   name?: string;
+  projectName?: string;
   authMethod?: string;
   loginCount: number;
   createdAt: string;
@@ -44,17 +45,41 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  allowedOrigins?: string[];
+  allowedProviders?: string[];
+}
+
+export interface CreateProjectResponse {
+  id: string;
+  name: string;
+  clientId: string;
+  clientSecret: string;
+}
+
 export const dashboardApi = {
+  // Create project (via main projects API)
+  async createProject(token: string, data: CreateProjectRequest): Promise<CreateProjectResponse> {
+    const res = await axios.post(
+      `${API_URL}/projects`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data.data;
+  },
+
   // Projects
   async listProjects(token: string): Promise<{ data: Project[]; meta: { total: number } }> {
-    const res = await axios.get(`${API_URL}/api/v1/dashboard/projects`, {
+    const res = await axios.get(`${API_URL}/dashboard/projects`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data.data;
   },
 
   async getProject(token: string, id: string): Promise<{ data: Project }> {
-    const res = await axios.get(`${API_URL}/api/v1/dashboard/projects/${id}`, {
+    const res = await axios.get(`${API_URL}/dashboard/projects/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data.data;
@@ -71,7 +96,23 @@ export const dashboardApi = {
     if (options?.limit) params.set("limit", String(options.limit));
     if (options?.search) params.set("search", options.search);
 
-    const res = await axios.get(`${API_URL}/api/v1/dashboard/projects/${projectId}/users?${params}`, {
+    const res = await axios.get(`${API_URL}/dashboard/projects/${projectId}/users?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data.data;
+  },
+
+  // All Users (cross-project)
+  async listAllUsers(
+    token: string,
+    options?: { page?: number; limit?: number; search?: string }
+  ): Promise<PaginatedResponse<ProjectUser>> {
+    const params = new URLSearchParams();
+    if (options?.page) params.set("page", String(options.page));
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.search) params.set("search", options.search);
+
+    const res = await axios.get(`${API_URL}/dashboard/users?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data.data;
@@ -79,7 +120,7 @@ export const dashboardApi = {
 
   // API Keys
   async listAPIKeys(token: string, projectId: string): Promise<{ data: APIKey[]; meta: { total: number } }> {
-    const res = await axios.get(`${API_URL}/api/v1/dashboard/projects/${projectId}/api-keys`, {
+    const res = await axios.get(`${API_URL}/dashboard/projects/${projectId}/api-keys`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data.data;
@@ -87,7 +128,7 @@ export const dashboardApi = {
 
   async createAPIKey(token: string, projectId: string, name: string) {
     const res = await axios.post(
-      `${API_URL}/api/v1/projects/${projectId}/api-keys`,
+      `${API_URL}/projects/${projectId}/api-keys`,
       { name },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -95,9 +136,46 @@ export const dashboardApi = {
   },
 
   async revokeAPIKey(token: string, projectId: string, keyId: string) {
-    const res = await axios.delete(`${API_URL}/api/v1/dashboard/projects/${projectId}/api-keys/${keyId}`, {
+    const res = await axios.delete(`${API_URL}/dashboard/projects/${projectId}/api-keys/${keyId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data.data;
   },
+
+  // Widget
+  async getWidget(token: string, projectId: string): Promise<WidgetConfig | null> {
+    const res = await axios.get(`${API_URL}/projects/${projectId}/widget`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data.data;
+  },
+
+  async updateWidget(token: string, projectId: string, data: Partial<WidgetConfig>) {
+    const res = await axios.patch(
+      `${API_URL}/projects/${projectId}/widget`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data.data;
+  },
 };
+
+export interface WidgetConfig {
+  projectId: string;
+  title: string;
+  subtitle: string;
+  themeConfig: {
+    primaryColor?: string;
+    logoUrl?: string;
+    logoType?: string;
+    logoIconName?: string;
+    borderRadius?: string;
+    darkMode?: boolean;
+    showSecuredBadge?: boolean;
+    entryTitle?: string;
+    termsUrl?: string;
+    privacyUrl?: string;
+  };
+  enabledProviders: string[];
+  updatedAt: string;
+}

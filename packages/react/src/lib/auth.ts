@@ -7,7 +7,7 @@ import { getUser } from "./api";
 
 export const authKeys = {
   all: ["auth"] as const,
-  user: () => [...authKeys.all, "user"] as const,
+  user: (token?: string | null) => [...authKeys.all, "user", token ?? ""] as const,
 };
 
 // ============================================
@@ -26,7 +26,7 @@ export const useValidateToken = ({
   enabled = true,
 }: UseValidateTokenOptions) => {
   return useQuery({
-    queryKey: authKeys.user(),
+    queryKey: authKeys.user(token),
     queryFn: () => getUser(apiUrl, token!),
     enabled: enabled && !!token,
     staleTime: 1000 * 60 * 5, // 5 minutes

@@ -10,11 +10,11 @@ type Project struct {
 	OwnerID          string          `json:"ownerId"`
 	Name             string          `json:"name"`
 	Description      *string         `json:"description"`
-	AllowedOrigins   []string        `json:"allowed_origins"`
-	AllowedProviders []string        `json:"allowed_providers"`
-	ThemeConfig      json.RawMessage `json:"theme_config"`
-	CreatedAt        time.Time       `json:"created_at"`
-	UpdatedAt        time.Time       `json:"updated_at"`
+	AllowedOrigins   []string        `json:"allowedOrigins"`
+	AllowedProviders []string        `json:"allowedProviders"`
+	ThemeConfig      json.RawMessage `json:"themeConfig"`
+	CreatedAt        time.Time       `json:"createdAt"`
+	UpdatedAt        time.Time       `json:"updatedAt"`
 }
 
 type APIKey struct {
@@ -37,14 +37,14 @@ type Widget struct {
 }
 
 type ThemeConfig struct {
-	PrimaryColor     string `json:"primary_color,omitempty"`
-	LogoURL          string `json:"logo_url,omitempty"`
-	LogoType         string `json:"logo_type,omitempty"`      // "url", "upload", or "icon"
-	LogoIconName     string `json:"logo_icon_name,omitempty"` // lucide icon name when LogoType is "icon"
-	BorderRadius     string `json:"border_radius,omitempty"`
-	DarkMode         bool   `json:"dark_mode,omitempty"`
-	ShowSecuredBadge *bool  `json:"show_secured_badge,omitempty"` // pointer to distinguish false from unset
-	EntryTitle       string `json:"entry_title,omitempty"`
-	TermsURL         string `json:"terms_url,omitempty"`
-	PrivacyURL       string `json:"privacy_url,omitempty"`
+	PrimaryColor     string `json:"primaryColor,omitempty"`
+	LogoURL          string `json:"logoUrl,omitempty"`
+	LogoType         string `json:"logoType,omitempty"`     // "url", "upload", or "icon"
+	LogoIconName     string `json:"logoIconName,omitempty"` // lucide icon name when LogoType is "icon"
+	BorderRadius     string `json:"borderRadius,omitempty"`
+	DarkMode         bool   `json:"darkMode,omitempty"`
+	ShowSecuredBadge *bool  `json:"showSecuredBadge,omitempty"` // pointer to distinguish false from unset
+	EntryTitle       string `json:"entryTitle,omitempty"`
+	TermsURL         string `json:"termsUrl,omitempty"`
+	PrivacyURL       string `json:"privacyUrl,omitempty"`
 }

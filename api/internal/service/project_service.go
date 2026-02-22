@@ -185,3 +185,65 @@ func (s *ProjectService) CreateAPIKey(ctx context.Context, input CreateAPIKeyInp
 		Name:         name,
 	}, nil
 }
+
+// Dashboard-specific methods
+
+func (s *ProjectService) ListProjectsByOwner(ctx context.Context, ownerID string) ([]models.ProjectWithStats, error) {
+	return s.repo.GetProjectsByOwnerID(ctx, ownerID)
+}
+
+func (s *ProjectService) GetProjectForOwner(ctx context.Context, projectID, ownerID string) (*models.ProjectWithStats, error) {
+	return s.repo.GetProjectStatsByOwnerID(ctx, projectID, ownerID)
+}
+
+func (s *ProjectService) ListProjectUsers(ctx context.Context, input models.ListProjectUsersInput) (*models.ListProjectUsersOutput, error) {
+	project, err := s.repo.GetByID(ctx, input.ProjectID)
+	if err != nil || project == nil {
+		return nil, fmt.Errorf("project_not_found")
+	}
+	if project.OwnerID != input.OwnerID {
+		return nil, fmt.Errorf("forbidden")
+	}
+
+	return s.repo.GetProjectUsers(ctx, input.ProjectID, input.Page, input.Limit, input.Search)
+}
+
+func (s *ProjectService) ListAllProjectUsers(ctx context.Context, ownerID string, page, limit int, search string) (*models.ListProjectUsersOutput, error) {
+	return s.repo.GetAllProjectUsers(ctx, ownerID, page, limit, search)
+}
+
+func (s *ProjectService) ListAPIKeys(ctx context.Context, projectID, ownerID string) ([]models.APIKeyInfo, error) {
+	project, err := s.repo.GetByID(ctx, projectID)
+	if err != nil || project == nil {
+		return nil, fmt.Errorf("project_not_found")
+	}
+	if project.OwnerID != ownerID {
+		return nil, fmt.Errorf("forbidden")
+	}
+
+	return s.repo.GetAPIKeysByProjectID(ctx, projectID)
+}
+
+func (s *ProjectService) ListAuthLogs(ctx context.Context, input models.ListAuthLogsInput) (*models.ListAuthLogsOutput, error) {
+	return s.repo.ListAuthLogs(ctx, input)
+}
+
+func (s *ProjectService) GetDashboardStats(ctx context.Context, ownerID string) (*models.DashboardStats, error) {
+	return s.repo.GetDashboardStats(ctx, ownerID)
+}
+
+func (s *ProjectService) GetUserStats(ctx context.Context, ownerID string) (*models.UserStats, error) {
+	return s.repo.GetUserStats(ctx, ownerID)
+}
+
+func (s *ProjectService) RevokeAPIKey(ctx context.Context, projectID, keyID, ownerID string) (*models.RevokedKeyInfo, error) {
+	project, err := s.repo.GetByID(ctx, projectID)
+	if err != nil || project == nil {
+		return nil, fmt.Errorf("project_not_found")
+	}
+	if project.OwnerID != ownerID {
+		return nil, fmt.Errorf("forbidden")
+	}
+
+	return s.repo.RevokeAPIKey(ctx, projectID, keyID)
+}
