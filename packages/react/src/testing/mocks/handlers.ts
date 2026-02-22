@@ -100,7 +100,7 @@ export const handlers = [
       data: {
         title: "Test Project",
         subtitle: "Please sign in",
-        enabledProviders: ["email"],
+        enabledProviders: ["email", "google", "github"],
         primaryColor: "#4f46e5",
         logoUrl: null,
       },

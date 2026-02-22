@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { PermitModal } from "./components/PermitModal";
 import { ShadowRootProvider } from "./components/ShadowRoot";
 import {
   PermitContext,
   type User,
-  type WidgetConfig,
 } from "./context/PermitContext";
 import permitStyles from "./global.css?inline";
-import { ApiError, createApiClient } from "./lib/api-client";
+import { useStoredCredentials } from "./hooks/useStoredCredentials";
+import { useTokenRefresh } from "./hooks/useTokenRefresh";
+import { useWidgetConfig } from "./hooks/useWidgetConfig";
 import { useValidateToken } from "./lib/auth";
 
 interface PermitConfig {
@@ -42,7 +43,7 @@ const createQueryClient = () =>
 
 export const PermitProvider = ({
   projectId,
-  config,
+  config = {},
   children,
 }: PermitProviderProps) => {
   // Create query client once per provider instance
@@ -76,93 +77,52 @@ const PermitProviderInner = ({
   disableShadowDOM,
   children,
 }: PermitProviderInnerProps) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [widgetConfig, setWidgetConfig] = useState<{
-    title?: string;
-    subtitle?: string;
-    enabledProviders?: string[];
-    primaryColor?: string;
-    logoUrl?: string;
-  } | null>(null);
-  const [configError, setConfigError] = useState<string | null>(null);
 
-  // Load stored credentials on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem(`permit_token_${projectId}`);
-    const storedUser = localStorage.getItem(`permit_user_${projectId}`);
+  const { user, token, refreshToken, saveCredentials, updateTokens, clearCredentials } =
+    useStoredCredentials(projectId);
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-  }, [projectId]);
-
-  // Fetch widget config on mount using Axios client
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        const api = createApiClient(apiUrl);
-        const data = await api.get<unknown, WidgetConfig>(
-          `/projects/${projectId}/widget`,
-        );
-        setWidgetConfig(data);
-      } catch (err) {
-        const apiError = err as ApiError;
-        if (apiError.status === 404) {
-          setConfigError("Invalid project ID");
-        } else {
-          setConfigError(
-            apiError.message || "Failed to load project configuration",
-          );
-        }
-      }
-    };
-    fetchConfig();
-  }, [apiUrl, projectId]);
+  const { widgetConfig, configError } = useWidgetConfig({ apiUrl, projectId });
 
   // Validate token with backend
-  const { isLoading: isValidating, isError: isTokenInvalid } = useValidateToken(
-    {
-      apiUrl,
-      token,
-      enabled: !!token,
+  const { isLoading: isValidating, isError: isTokenInvalid } = useValidateToken({
+    apiUrl,
+    token,
+    enabled: !!token,
+  });
+
+  // Auto-refresh token before expiry
+  const { doRefresh } = useTokenRefresh({
+    token,
+    refreshToken,
+    apiUrl,
+    onRefresh: updateTokens,
+    onRefreshFailure: clearCredentials,
+  });
+
+  // When token validation fails, attempt refresh before logging out
+  useEffect(() => {
+    if (!isTokenInvalid || !token) return;
+
+    if (refreshToken) {
+      doRefresh();
+    } else {
+      clearCredentials();
+    }
+  }, [isTokenInvalid, token, refreshToken, doRefresh, clearCredentials]);
+
+  const login = useCallback(() => {
+    if (!token) setIsModalOpen(true);
+  }, [token]);
+
+  const handleLoginSuccess = useCallback(
+    (accessToken: string, newRefreshToken: string, newUser: User) => {
+      saveCredentials(accessToken, newRefreshToken, newUser);
+      setIsModalOpen(false);
     },
+    [saveCredentials],
   );
 
-  // Clear invalid token
-  useEffect(() => {
-    if (isTokenInvalid && token) {
-      localStorage.removeItem(`permit_token_${projectId}`);
-      localStorage.removeItem(`permit_user_${projectId}`);
-      setToken(null);
-      setUser(null);
-    }
-  }, [isTokenInvalid, token, projectId]);
-
-  const login = () => {
-    if (!token) setIsModalOpen(true);
-  };
-
-  const logout = () => {
-    localStorage.removeItem(`permit_token_${projectId}`);
-    localStorage.removeItem(`permit_user_${projectId}`);
-    setUser(null);
-    setToken(null);
-  };
-
-  const getAccessToken = () => token;
-
-  const handleLoginSuccess = (newToken: string, newUser: User) => {
-    localStorage.setItem(`permit_token_${projectId}`, newToken);
-    localStorage.setItem(`permit_user_${projectId}`, JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-    setIsModalOpen(false);
-  };
-
-  // Loading state: checking localStorage or validating token
   const isLoading = token ? isValidating : false;
 
   return (
@@ -173,8 +133,8 @@ const PermitProviderInner = ({
         user,
         token,
         login,
-        logout,
-        getAccessToken,
+        logout: clearCredentials,
+        accessToken: token,
         widgetConfig,
         configError,
         apiUrl,

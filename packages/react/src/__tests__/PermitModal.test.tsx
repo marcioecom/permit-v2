@@ -22,13 +22,15 @@ describe("PermitModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows social login buttons", () => {
+  it("shows social login buttons", async () => {
     renderWithPermit(
       <PermitModal onClose={mockOnClose} onSuccess={mockOnSuccess} />
     );
 
-    expect(screen.getByRole("button", { name: /google/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /github/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /google/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /github/i })).toBeInTheDocument();
+    });
   });
 
   it("transitions to OTP step after submitting email", async () => {

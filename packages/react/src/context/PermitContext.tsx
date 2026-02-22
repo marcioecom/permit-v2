@@ -11,6 +11,9 @@ export interface WidgetConfig {
   enabledProviders?: string[];
   primaryColor?: string;
   logoUrl?: string;
+  showSecuredBadge?: boolean;
+  termsUrl?: string;
+  privacyUrl?: string;
 }
 
 export interface PermitContextType {
@@ -24,7 +27,7 @@ export interface PermitContextType {
   projectId: string;
   login: () => void;
   logout: () => void;
-  getAccessToken: () => string | null;
+  accessToken: string | null;
 }
 
 export const PermitContext = createContext<PermitContextType | undefined>(

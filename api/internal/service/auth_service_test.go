@@ -121,9 +121,8 @@ func TestCreateOTPCode_NewUser(t *testing.T) {
 	_ = otpRepo
 
 	input := service.CreateAuthInput{
-		Email:       "test@example.com",
-		ProjectID:   ulid.Make().String(),
-		ProjectName: "Test Project",
+		Email:     "test@example.com",
+		ProjectID: ulid.Make().String(),
 	}
 
 	if input.Email == "" {

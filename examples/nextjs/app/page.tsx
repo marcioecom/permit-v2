@@ -4,14 +4,14 @@ import { usePermit } from '@permitdev/react';
 import { useState } from 'react';
 
 export default function Home() {
-  const { login, logout, user, isAuthenticated, getAccessToken  } = usePermit();
+  const { login, logout, user, isAuthenticated, accessToken } = usePermit();
   const [protectedData, setProtectedData] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchProtectedData = async () => {
     try {
       setFetchError(null);
-      const token = getAccessToken();
+      const token = accessToken;
 
       const response = await fetch('/api/protected', {
         headers: {
