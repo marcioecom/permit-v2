@@ -139,7 +139,7 @@ export default function UsersPage() {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
+                  <tr key={`${user.projectName}-${user.id}`} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar
