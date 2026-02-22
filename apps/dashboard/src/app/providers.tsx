@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 
 const DASHBOARD_PROJECT_ID = process.env.NEXT_PUBLIC_DASHBOARD_PROJECT_ID || "dashboard";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-// const API_URL = "http://localhost:8080/api/v1";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
