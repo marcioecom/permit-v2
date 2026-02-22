@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
+import { useSidebar } from "./SidebarContext";
 
 const navItems: { href: string; label: string; icon: ComponentType<{ className?: string; size?: number }> }[] = [
   { href: "/", label: "Overview", icon: IconLayoutGrid },
@@ -21,7 +22,7 @@ const navItems: { href: string; label: string; icon: ComponentType<{ className?:
   { href: "/logs", label: "Auth Logs", icon: IconFileText },
 ];
 
-export function Sidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
@@ -30,10 +31,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside
-      className="w-64 border-r border-slate-100 flex flex-col fixed inset-y-0 z-50 bg-white"
-      style={{ viewTransitionName: "sidebar" }}
-    >
+    <>
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-8 h-8 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
@@ -51,6 +49,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={`relative flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${active
                 ? "text-[var(--accent)] bg-[var(--accent-light)]"
                 : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
@@ -83,6 +82,39 @@ export function Sidebar() {
           <IconExternalLink className="w-3.5 h-3.5 ml-auto" />
         </a>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const { isOpen, close } = useSidebar();
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden md:flex w-64 border-r border-slate-100 flex-col fixed inset-y-0 z-50 bg-white"
+        style={{ viewTransitionName: "sidebar" }}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile sidebar overlay */}
+      <motion.div
+        initial={false}
+        animate={{ opacity: isOpen ? 1 : 0 }}
+        transition={{ duration: 0.2 }}
+        className={`fixed inset-0 z-50 bg-black/40 md:hidden ${isOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+        onClick={close}
+      />
+      <motion.aside
+        initial={false}
+        animate={{ x: isOpen ? 0 : "-100%" }}
+        transition={{ type: "spring", stiffness: 400, damping: 35 }}
+        className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-100 flex flex-col md:hidden"
+      >
+        <SidebarContent onNavigate={close} />
+      </motion.aside>
+    </>
   );
 }

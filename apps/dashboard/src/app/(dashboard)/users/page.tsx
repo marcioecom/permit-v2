@@ -72,7 +72,7 @@ export default function UsersPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard label="Total Users" value={statsLoading ? "..." : userStats?.totalUsers ?? 0} changeType="neutral" />
         <StatCard label="Active (24h)" value={statsLoading ? "..." : userStats?.activeIn24h ?? 0} changeType="positive" />
         <StatCard label="Verification Rate" value={statsLoading ? "..." : userStats?.verificationRate ?? "N/A"} change="Stable" changeType="neutral" />
@@ -91,7 +91,7 @@ export default function UsersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search users..."
-                className="bg-slate-50 border-slate-100 focus:bg-white focus:ring-0 rounded-lg py-1.5 pl-9 pr-4 text-xs w-64"
+                className="bg-slate-50 border-slate-100 focus:bg-white focus:ring-0 rounded-lg py-1.5 pl-9 pr-4 text-xs w-full sm:w-64"
               />
             </div>
             <select
@@ -185,7 +185,7 @@ export default function UsersPage() {
 
         {/* Pagination */}
         {meta.totalPages > 1 && (
-          <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+          <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2">
             <Pagination
               currentPage={page}
               totalPages={meta.totalPages}

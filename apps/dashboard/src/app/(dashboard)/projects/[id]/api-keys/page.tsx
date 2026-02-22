@@ -74,7 +74,7 @@ export default function APIKeysPage() {
     <div>
       <ProjectTabs projectId={projectId} projectName={project?.name} />
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-extrabold text-slate-900 mb-1">API Keys</h1>
           <p className="text-slate-500">Manage API keys for this project</p>
@@ -122,7 +122,7 @@ export default function APIKeysPage() {
       {showCreate && (
         <GlassCard className="mb-6">
           <h3 className="font-bold text-slate-800 mb-4">Create New API Key</h3>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <input
               type="text"
               placeholder="Key name (e.g., Production, Development)"

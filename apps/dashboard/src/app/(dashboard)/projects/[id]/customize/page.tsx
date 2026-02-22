@@ -75,7 +75,7 @@ export default function CustomizePage() {
         {/* Left: Config */}
         <div>
           {/* Tab bar */}
-          <div className="flex items-center gap-1 bg-slate-100/80 rounded-xl p-1 mb-6">
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100/80 rounded-xl p-1 mb-6">
             {tabs.map((t) => (
               <button
                 key={t.key}
@@ -263,7 +263,7 @@ export default function CustomizePage() {
         {/* Right: Live Preview */}
         <div>
           <h3 className="text-lg font-bold text-slate-800 mb-4">Preview</h3>
-          <GlassCard className="flex items-center justify-center min-h-[500px]">
+          <GlassCard className="flex items-center justify-center min-h-[300px] lg:min-h-[500px]">
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-100 p-8">
               {/* Logo */}
               {logoUrl && (

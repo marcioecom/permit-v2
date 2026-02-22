@@ -67,13 +67,13 @@ export default function CreateProjectPage() {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Client ID</label>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-mono text-sm text-slate-800 select-all">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-mono text-sm text-slate-800 select-all break-all">
                 {credentials.clientId}
               </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Client Secret</label>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 font-mono text-sm text-slate-800 select-all">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 font-mono text-sm text-slate-800 select-all break-all">
                 {credentials.clientSecret}
               </div>
               <p className="text-xs text-amber-600 mt-1 font-medium">Copy this now - it will not be shown again.</p>
@@ -130,7 +130,7 @@ export default function CreateProjectPage() {
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Environment</label>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 {["development", "staging", "production"].map((env) => (
                   <label
                     key={env}

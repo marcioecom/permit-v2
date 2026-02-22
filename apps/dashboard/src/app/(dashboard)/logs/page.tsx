@@ -113,7 +113,7 @@ export default function LogsPage() {
 
       {/* Filters Bar */}
       <GlassCard className="mb-8 flex flex-wrap items-center gap-4">
-        <div className="flex-1 min-w-[200px] relative">
+        <div className="flex-1 min-w-0 sm:min-w-[200px] relative">
           <IconFilter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <select
             value={eventType}
@@ -125,7 +125,7 @@ export default function LogsPage() {
           </select>
         </div>
 
-        <div className="flex-1 min-w-[200px] relative">
+        <div className="flex-1 min-w-0 sm:min-w-[200px] relative">
           <IconCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <select
             value={dateRange}
@@ -139,7 +139,7 @@ export default function LogsPage() {
           </select>
         </div>
 
-        <div className="flex-1 min-w-[200px] relative">
+        <div className="flex-1 min-w-0 sm:min-w-[200px] relative">
           <IconArchive className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <select
             value={projectId}
@@ -222,7 +222,7 @@ export default function LogsPage() {
 
         {/* Pagination */}
         {meta.totalPages > 1 && (
-          <div className="p-6 border-t border-slate-100 bg-white flex items-center justify-between">
+          <div className="p-6 border-t border-slate-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-2">
             <span className="text-xs text-slate-400 font-medium">
               Showing 1-{logs.length} of {meta.total} events
             </span>

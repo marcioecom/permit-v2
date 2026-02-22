@@ -14,7 +14,7 @@ export default function OverviewPage() {
   return (
     <div>
       {/* Welcome Hero */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-extrabold text-slate-900 mb-2">
             Good to see you!

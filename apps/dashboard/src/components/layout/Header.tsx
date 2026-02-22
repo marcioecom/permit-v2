@@ -1,9 +1,10 @@
 "use client";
 
 import { usePermit } from "@permitdev/react";
-import { IconLogout, IconSearch } from "@tabler/icons-react";
+import { IconLogout, IconMenu2, IconSearch } from "@tabler/icons-react";
 import Avatar from "boring-avatars";
 import { useEffect, useRef, useState } from "react";
+import { useSidebar } from "./SidebarContext";
 
 interface User {
   id: string;
@@ -12,6 +13,7 @@ interface User {
 
 export function Header() {
   const { user, logout } = usePermit();
+  const { toggle } = useSidebar();
   const typedUser = user as User | null;
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,16 +34,27 @@ export function Header() {
       className="h-16 border-b border-slate-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 z-40"
       style={{ viewTransitionName: "main-header" }}
     >
-      {/* Search */}
-      <div className="relative w-96 group">
-        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-accent transition-colors" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search for projects, users, or logs..."
-          className="w-full bg-slate-50 border-transparent focus:bg-white focus:border-slate-200 focus:ring-0 rounded-full py-2 pl-10 pr-4 text-sm transition-all outline-none"
-        />
+      <div className="flex items-center gap-3">
+        {/* Mobile hamburger */}
+        <button
+          onClick={toggle}
+          className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900 transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          <IconMenu2 className="w-5 h-5" />
+        </button>
+
+        {/* Search */}
+        <div className="relative w-full max-w-96 group">
+          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-accent transition-colors" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for projects, users, or logs..."
+            className="w-full bg-slate-50 border-transparent focus:bg-white focus:border-slate-200 focus:ring-0 rounded-full py-2 pl-10 pr-4 text-sm transition-all outline-none"
+          />
+        </div>
       </div>
 
       {/* Right Section */}
@@ -50,7 +63,7 @@ export function Header() {
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <span className="text-sm font-bold text-slate-800">{typedUser?.email?.split("@")[0] ?? "User"}</span>
+          <span className="hidden md:inline text-sm font-bold text-slate-800">{typedUser?.email?.split("@")[0] ?? "User"}</span>
           <Avatar
             size={36}
             name={typedUser?.email ?? "user"}

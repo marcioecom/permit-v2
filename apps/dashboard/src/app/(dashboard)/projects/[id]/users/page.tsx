@@ -35,7 +35,7 @@ export default function ProjectUsersPage() {
       {/* Table */}
       <GlassCard className="overflow-hidden !p-0">
         {/* Toolbar */}
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-4">
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="relative">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -43,7 +43,7 @@ export default function ProjectUsersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by email..."
-              className="bg-slate-50 border-slate-100 focus:bg-white focus:ring-0 rounded-lg py-1.5 pl-9 pr-4 text-xs w-64"
+              className="bg-slate-50 border-slate-100 focus:bg-white focus:ring-0 rounded-lg py-1.5 pl-9 pr-4 text-xs w-full sm:w-64"
             />
           </div>
           <p className="text-xs text-slate-400">
