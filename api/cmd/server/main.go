@@ -73,6 +73,7 @@ func main() {
 	sessionService := service.NewSessionService(jwtService, userRepo)
 	projectService := service.NewProjectService(projectRepo)
 	oauthService := service.NewOAuthService(cfg, jwtService, oauthRepo, envRepo, userRepo, identityRepo, projectRepo)
+	envService := service.NewEnvironmentService(envRepo, oauthRepo, projectRepo)
 
 	handlers := &handler.Handlers{
 		Health:    handler.NewHealthHandler(db.Pool),
@@ -80,7 +81,7 @@ func main() {
 		Session:   handler.NewSessionHandler(sessionService),
 		Project:   handler.NewProjectHandler(projectService),
 		JWKS:      handler.NewJWKSHandler(jwtService, projectRepo),
-		Dashboard: handler.NewDashboardHandler(projectService),
+		Dashboard: handler.NewDashboardHandler(projectService, envService),
 		OAuth:     handler.NewOAuthHandler(oauthService),
 	}
 	services := &handler.Services{

@@ -25,6 +25,7 @@ export interface PermitContextType {
   configError: string | null;
   apiUrl: string;
   projectId: string;
+  ssoCallbackUrl: string;
   login: () => void;
   logout: () => void;
   accessToken: string | null;

@@ -62,3 +62,23 @@ export const refreshToken = (
   const api = createApiClient(apiUrl);
   return api.post("/auth/refresh", { refreshToken: refreshTokenValue });
 };
+
+// ============================================
+// OAuth Authentication
+// ============================================
+
+export const oauthAuthorize = (
+  apiUrl: string,
+  data: { provider: string; environmentId: string; redirectUrl: string }
+): Promise<{ authorizationUrl: string }> => {
+  const api = createApiClient(apiUrl);
+  return api.post("/auth/oauth/authorize", data);
+};
+
+export const oauthExchangeToken = (
+  apiUrl: string,
+  data: { code: string; environmentId: string }
+): Promise<AuthResponse> => {
+  const api = createApiClient(apiUrl);
+  return api.post("/auth/oauth/token", data);
+};

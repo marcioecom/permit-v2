@@ -77,6 +77,21 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 			r.Get("/logs", h.Dashboard.ListAuthLogs)
 			r.Get("/stats", h.Dashboard.GetDashboardStats)
 			r.Get("/users/stats", h.Dashboard.GetUserStats)
+
+			// Environment management
+			r.Route("/projects/{id}/environments", func(r chi.Router) {
+				r.Get("/", h.Dashboard.ListEnvironments)
+				r.Post("/", h.Dashboard.CreateEnvironment)
+				r.Get("/{envId}", h.Dashboard.GetEnvironment)
+				r.Patch("/{envId}", h.Dashboard.UpdateEnvironment)
+
+				// OAuth provider configs per environment
+				r.Route("/{envId}/oauth-providers", func(r chi.Router) {
+					r.Get("/", h.Dashboard.ListOAuthProviders)
+					r.Post("/", h.Dashboard.UpsertOAuthProvider)
+					r.Delete("/{provider}", h.Dashboard.DeleteOAuthProvider)
+				})
+			})
 		})
 	})
 }

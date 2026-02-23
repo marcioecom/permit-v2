@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { User } from "@/context/PermitContext";
 import { usePermit } from "@/hooks/usePermit";
-import { startOtp, verifyOtp } from "@/lib/api";
+import { oauthAuthorize, startOtp, verifyOtp } from "@/lib/api";
 import { ApiError } from "@/lib/api-client";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, Lock } from "lucide-react";
@@ -55,6 +55,24 @@ export const PermitModal = ({
   const [error, setError] = useState<string | null>(null);
 
   const { theme } = useTheme();
+  const { ssoCallbackUrl } = context;
+
+  const handleOAuthSignIn = async (provider: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await oauthAuthorize(apiUrl, {
+        provider,
+        environmentId: projectId,
+        redirectUrl: ssoCallbackUrl || "/sso-callback",
+      });
+      window.location.href = response.authorizationUrl;
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || "Failed to start OAuth flow");
+      setLoading(false);
+    }
+  };
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,12 +178,12 @@ export const PermitModal = ({
             <>
               <div className="flex justify-center gap-4 mt-4">
                 {hasGoogle && (
-                  <Button variant="outline" disabled title="Coming soon">
+                  <Button variant="outline" disabled={loading} onClick={() => handleOAuthSignIn("google")}>
                     <Google /> Google
                   </Button>
                 )}
                 {hasGithub && (
-                  <Button variant="outline" disabled title="Coming soon">
+                  <Button variant="outline" disabled={loading} onClick={() => handleOAuthSignIn("github")}>
                     {theme === "dark" ? <GithubDark /> : <GithubLight />}
                     GitHub
                   </Button>

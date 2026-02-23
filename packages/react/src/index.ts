@@ -16,6 +16,7 @@ export { PermitProvider } from "./PermitProvider";
 // Components
 export { PermitButton } from "./components/PermitButton";
 export { PermitModal } from "./components/PermitModal";
+export { PermitSSOCallback } from "./components/PermitSSOCallback";
 
 // Shadow DOM utilities
 export { ShadowRootProvider, useShadowContainer } from "./components/ShadowRoot";
