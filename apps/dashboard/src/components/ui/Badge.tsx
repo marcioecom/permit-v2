@@ -13,7 +13,9 @@ export function Badge({ variant, children }: BadgeProps) {
   };
 
   return (
-    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${styles[variant]}`}>
+    <span
+      className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border text-nowrap ${styles[variant]}`}
+    >
       {children}
     </span>
   );
