@@ -10,3 +10,6 @@ playground/.vite
 
 # SDK
 sdk/dist
+
+# Worktrees
+.worktrees/
