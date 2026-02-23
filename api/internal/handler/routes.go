@@ -88,7 +88,7 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 				// OAuth provider configs per environment
 				r.Route("/{envId}/oauth-providers", func(r chi.Router) {
 					r.Get("/", h.Dashboard.ListOAuthProviders)
-					r.Post("/", h.Dashboard.UpsertOAuthProvider)
+					r.Put("/", h.Dashboard.UpsertOAuthProvider)
 					r.Delete("/{provider}", h.Dashboard.DeleteOAuthProvider)
 				})
 			})

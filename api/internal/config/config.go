@@ -23,10 +23,10 @@ type Config struct {
 
 	// OAuth shared credentials (used for development environments)
 	OAuthCallbackBaseURL     string
-	SharedGoogleClientID     string
-	SharedGoogleClientSecret string
-	SharedGitHubClientID     string
-	SharedGitHubClientSecret string
+	SharedGoogleClientID     string `validate:"required"`
+	SharedGoogleClientSecret string `validate:"required"`
+	SharedGitHubClientID     string `validate:"required"`
+	SharedGitHubClientSecret string `validate:"required"`
 }
 
 func Load() (*Config, error) {

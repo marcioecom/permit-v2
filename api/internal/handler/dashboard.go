@@ -255,10 +255,7 @@ func (h *DashboardHandler) ListEnvironments(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	writeSuccess(w, http.StatusOK, map[string]any{
-		"data": envs,
-		"meta": map[string]int{"total": len(envs)},
-	})
+	writeSuccess(w, http.StatusOK, envs)
 }
 
 type CreateEnvironmentRequest struct {
@@ -363,10 +360,7 @@ func (h *DashboardHandler) ListOAuthProviders(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	writeSuccess(w, http.StatusOK, map[string]any{
-		"data": configs,
-		"meta": map[string]int{"total": len(configs)},
-	})
+	writeSuccess(w, http.StatusOK, configs)
 }
 
 type UpsertOAuthProviderRequest struct {

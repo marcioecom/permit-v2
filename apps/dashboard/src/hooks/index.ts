@@ -2,6 +2,7 @@ export { useAuthLogs, type AuthLog } from "./useAuthLogs";
 export { useDashboardStats } from "./useDashboardStats";
 export { useEnvironments } from "./useEnvironments";
 export { useOAuthProviders } from "./useOAuthProviders";
+export { useSelectedEnvironment } from "./useSelectedEnvironment";
 export { useProject } from "./useProject";
 export { useProjects } from "./useProjects";
 export { useProjectUsers } from "./useProjectUsers";

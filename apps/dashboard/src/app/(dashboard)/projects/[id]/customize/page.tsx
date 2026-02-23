@@ -2,8 +2,8 @@
 
 import { ProjectTabs } from "@/components/layout/ProjectTabs";
 import { Button, GlassCard, Toggle } from "@/components/ui";
-import { useProject, useWidget } from "@/hooks";
-import { IconKey, IconMail } from "@tabler/icons-react";
+import { useOAuthProviders, useProject, useSelectedEnvironment, useWidget } from "@/hooks";
+import { IconBrandGithub, IconBrandGoogle, IconMail } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -13,6 +13,8 @@ export default function CustomizePage() {
   const { id } = useParams<{ id: string }>();
   const { project } = useProject(id);
   const { widget, isLoading, updateWidget } = useWidget(id);
+  const { envId, environment } = useSelectedEnvironment(id);
+  const { providers, upsertProvider } = useOAuthProviders(id, envId);
 
   const [tab, setTab] = useState<Tab>("design");
   const [title, setTitle] = useState("");
@@ -41,6 +43,7 @@ export default function CustomizePage() {
     setSaving(true);
     setSaved(false);
     try {
+      const enabledProviders = ["email", ...providers.filter((p) => p.enabled).map((p) => p.provider)];
       await updateWidget.mutateAsync({
         title,
         subtitle,
@@ -51,7 +54,7 @@ export default function CustomizePage() {
           privacyUrl,
           showSecuredBadge: showBadge,
         },
-        enabledProviders: ["email"],
+        enabledProviders,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -59,6 +62,15 @@ export default function CustomizePage() {
       setSaving(false);
     }
   };
+
+  const handleToggleProvider = (provider: string, enabled: boolean) => {
+    upsertProvider.mutate({ provider, enabled });
+  };
+
+  const oauthProviders = [
+    { key: "google", label: "Google", desc: "Sign in with Google", icon: IconBrandGoogle },
+    { key: "github", label: "GitHub", desc: "Sign in with GitHub", icon: IconBrandGithub },
+  ];
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "design", label: "Design" },
@@ -153,7 +165,12 @@ export default function CustomizePage() {
 
               {tab === "methods" && (
                 <GlassCard>
-                  <h3 className="text-lg font-bold text-slate-800 mb-6">Auth Methods</h3>
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">Auth Methods</h3>
+                  {environment && (
+                    <p className="text-xs text-slate-400 mb-6">
+                      Environment: {environment.name}
+                    </p>
+                  )}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                       <div className="flex items-center gap-4">
@@ -168,24 +185,32 @@ export default function CustomizePage() {
                       <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">Always On</span>
                     </div>
 
-                    {[
-                      { label: "Google SSO", desc: "Sign in with Google" },
-                      { label: "GitHub SSO", desc: "Sign in with GitHub" },
-                      { label: "Apple SSO", desc: "Sign in with Apple" },
-                    ].map((provider) => (
-                      <div key={provider.label} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl opacity-60">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
-                            <IconKey className="w-5 h-5 text-slate-400" />
+                    {oauthProviders.map((provider) => {
+                      const config = providers.find((p) => p.provider === provider.key);
+                      const isEnabled = config?.enabled ?? false;
+                      const Icon = provider.icon;
+                      return (
+                        <div key={provider.key} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
+                              <Icon className="w-5 h-5 text-slate-400" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-800">{provider.label}</p>
+                              <p className="text-xs text-slate-400">{provider.desc}</p>
+                              {isEnabled && config?.isShared && (
+                                <p className="text-xs text-blue-500 mt-0.5">Using shared dev credentials</p>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-slate-800">{provider.label}</p>
-                            <p className="text-xs text-slate-400">{provider.desc}</p>
-                          </div>
+                          <Toggle
+                            enabled={isEnabled}
+                            disabled={upsertProvider.isPending}
+                            onChange={(newVal) => handleToggleProvider(provider.key, newVal)}
+                          />
                         </div>
-                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Coming Soon</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </GlassCard>
               )}
