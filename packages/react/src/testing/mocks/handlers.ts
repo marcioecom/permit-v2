@@ -97,12 +97,13 @@ export const handlers = [
   // Widget config
   http.get(`${API_URL}/projects/:projectId/widget`, () => {
     return HttpResponse.json({
-      data: {
-        title: "Test Project",
-        subtitle: "Please sign in",
-        enabledProviders: ["email", "google", "github"],
+      title: "Test Project",
+      subtitle: "Please sign in",
+      enabledProviders: ["email", "google", "github"],
+      themeConfig: {
         primaryColor: "#4f46e5",
         logoUrl: null,
+        showSecuredBadge: true,
       },
     });
   }),
