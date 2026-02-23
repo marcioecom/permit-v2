@@ -25,6 +25,7 @@ type AuthService struct {
 	otpRepo      repository.OTPCodeRepository
 	identityRepo repository.IdentityRepository
 	projectRepo  repository.ProjectRepository
+	envRepo      repository.EnvironmentRepository
 }
 
 func NewAuthService(
@@ -34,6 +35,7 @@ func NewAuthService(
 	otpRepo repository.OTPCodeRepository,
 	identityRepo repository.IdentityRepository,
 	projectRepo repository.ProjectRepository,
+	envRepo repository.EnvironmentRepository,
 ) *AuthService {
 	return &AuthService{
 		jwtService:   jwtService,
@@ -42,6 +44,7 @@ func NewAuthService(
 		otpRepo:      otpRepo,
 		identityRepo: identityRepo,
 		projectRepo:  projectRepo,
+		envRepo:      envRepo,
 	}
 }
 
@@ -87,12 +90,18 @@ func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) 
 	}
 	code := strings.Join(digits, "")
 
+	env, err := s.envRepo.GetDefaultForProject(ctx, input.ProjectID)
+	if err != nil || env == nil {
+		return fmt.Errorf("environment_not_found")
+	}
+
 	err = s.otpRepo.Create(ctx, &models.OTPCode{
-		ID:        ulid.Make().String(),
-		UserID:    userID,
-		ProjectID: input.ProjectID,
-		Code:      code,
-		ExpiresAt: time.Now().Add(time.Minute * 10),
+		ID:            ulid.Make().String(),
+		UserID:        userID,
+		ProjectID:     input.ProjectID,
+		EnvironmentID: env.ID,
+		Code:          code,
+		ExpiresAt:     time.Now().Add(time.Minute * 10),
 	})
 	if err != nil {
 		return err
@@ -198,7 +207,7 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 		}
 	}
 
-	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, input.ProjectID, "", "email")
+	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, input.ProjectID, otp.EnvironmentID, "email")
 	if err != nil {
 		return nil, fmt.Errorf("token_generation_failed")
 	}

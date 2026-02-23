@@ -24,10 +24,10 @@ func NewPostgresOTPCodeRepo(db *pgxpool.Pool) OTPCodeRepository {
 
 func (r *postgresOTPCodeRepo) Create(ctx context.Context, p *models.OTPCode) error {
 	_, err := r.db.Exec(ctx, `
-		INSERT INTO otp_codes (id, user_id, project_id, code, expires_at)
-		VALUES ($1, $2, $3, $4, $5);
+		INSERT INTO otp_codes (id, user_id, project_id, environment_id, code, expires_at)
+		VALUES ($1, $2, $3, $4, $5, $6);
 		`,
-		p.ID, p.UserID, p.ProjectID, p.Code, p.ExpiresAt)
+		p.ID, p.UserID, p.ProjectID, p.EnvironmentID, p.Code, p.ExpiresAt)
 	if err != nil {
 		return err
 	}
@@ -39,9 +39,9 @@ func (r *postgresOTPCodeRepo) GetByProjectAndCode(ctx context.Context, projectID
 	var otpCode models.OTPCode
 
 	err := r.db.QueryRow(ctx, `
-		SELECT id, user_id, code, used_at, expires_at FROM otp_codes WHERE project_id = $1 AND code = $2;
+		SELECT id, user_id, environment_id, code, used_at, expires_at FROM otp_codes WHERE project_id = $1 AND code = $2;
 		`, projectID, code).
-		Scan(&otpCode.ID, &otpCode.UserID, &otpCode.Code, &otpCode.UsedAt, &otpCode.ExpiresAt)
+		Scan(&otpCode.ID, &otpCode.UserID, &otpCode.EnvironmentID, &otpCode.Code, &otpCode.UsedAt, &otpCode.ExpiresAt)
 	if err != nil {
 		return nil, err
 	}

@@ -69,7 +69,7 @@ func main() {
 
 	emailService := infra.NewEmailService(cfg)
 
-	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo, projectRepo)
+	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo, projectRepo, envRepo)
 	sessionService := service.NewSessionService(jwtService, userRepo)
 	projectService := service.NewProjectService(projectRepo)
 	oauthService := service.NewOAuthService(cfg, jwtService, oauthRepo, envRepo, userRepo, identityRepo, projectRepo)
