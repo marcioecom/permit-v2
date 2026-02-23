@@ -51,6 +51,8 @@ func main() {
 	otpRepo := repository.NewPostgresOTPCodeRepo(db.Pool)
 	projectRepo := repository.NewPostgresProjectRepo(db.Pool)
 	identityRepo := repository.NewIdentityRepository(db.Pool)
+	envRepo := repository.NewPostgresEnvironmentRepo(db.Pool)
+	oauthRepo := repository.NewPostgresOAuthRepo(db.Pool)
 
 	keyManager := crypto.NewKeyManager()
 	if cfg.JWTPrivateKey != "" {
@@ -70,6 +72,7 @@ func main() {
 	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo, projectRepo)
 	sessionService := service.NewSessionService(jwtService, userRepo)
 	projectService := service.NewProjectService(projectRepo)
+	oauthService := service.NewOAuthService(cfg, jwtService, oauthRepo, envRepo, userRepo, identityRepo, projectRepo)
 
 	handlers := &handler.Handlers{
 		Health:    handler.NewHealthHandler(db.Pool),
@@ -78,6 +81,7 @@ func main() {
 		Project:   handler.NewProjectHandler(projectService),
 		JWKS:      handler.NewJWKSHandler(jwtService, projectRepo),
 		Dashboard: handler.NewDashboardHandler(projectService),
+		OAuth:     handler.NewOAuthHandler(oauthService),
 	}
 	services := &handler.Services{
 		JWTService:  jwtService,

@@ -14,6 +14,7 @@ type Handlers struct {
 	Project   *ProjectHandler
 	JWKS      *JWKSHandler
 	Dashboard *DashboardHandler
+	OAuth     *OAuthHandler
 }
 
 type Services struct {
@@ -24,6 +25,9 @@ type Services struct {
 func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 	r.Get("/health", h.Health.GetHealth)
 	r.Get("/.well-known/jwks.json", h.JWKS.GetJWKS)
+
+	// OAuth callback from providers (Google/GitHub redirect here)
+	r.Get("/oauth/callback", h.OAuth.Callback)
 
 	corsMiddleware := middleware.NewCORSMiddleware(services.ProjectRepo)
 	otpRateLimiter := middleware.RateLimitMiddleware(middleware.OTPLimiter, middleware.IPKeyExtractor)
@@ -40,6 +44,10 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 
 			r.Post("/refresh", h.Session.Refresh)
 			r.With(authMiddleware.RequireAuth).Post("/logout", h.Session.Logout)
+
+			// OAuth endpoints
+			r.Post("/oauth/authorize", h.OAuth.Authorize)
+			r.Post("/oauth/token", h.OAuth.ExchangeToken)
 		})
 
 		r.Route("/projects", func(r chi.Router) {
