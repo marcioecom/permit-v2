@@ -158,7 +158,85 @@ export const dashboardApi = {
     );
     return res.data.data;
   },
+
+  // Environments
+  async listEnvironments(token: string, projectId: string): Promise<Environment[]> {
+    const res = await axios.get(`${API_URL}/dashboard/projects/${projectId}/environments`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data.data;
+  },
+
+  async getEnvironment(token: string, projectId: string, envId: string): Promise<Environment> {
+    const res = await axios.get(`${API_URL}/dashboard/projects/${projectId}/environments/${envId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data.data;
+  },
+
+  async createEnvironment(token: string, projectId: string, data: { name: string; type: string }): Promise<Environment> {
+    const res = await axios.post(
+      `${API_URL}/dashboard/projects/${projectId}/environments`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data.data;
+  },
+
+  // OAuth Providers
+  async listOAuthProviders(token: string, projectId: string, envId: string): Promise<OAuthProviderConfig[]> {
+    const res = await axios.get(`${API_URL}/dashboard/projects/${projectId}/environments/${envId}/oauth-providers`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data.data;
+  },
+
+  async upsertOAuthProvider(token: string, projectId: string, envId: string, data: UpsertOAuthProviderRequest): Promise<OAuthProviderConfig> {
+    const res = await axios.put(
+      `${API_URL}/dashboard/projects/${projectId}/environments/${envId}/oauth-providers`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data.data;
+  },
+
+  async deleteOAuthProvider(token: string, projectId: string, envId: string, provider: string) {
+    const res = await axios.delete(
+      `${API_URL}/dashboard/projects/${projectId}/environments/${envId}/oauth-providers/${provider}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data;
+  },
 };
+
+// Environments
+export interface Environment {
+  id: string;
+  projectId: string;
+  name: string;
+  type: "development" | "staging" | "production";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OAuthProviderConfig {
+  id: string;
+  environmentId: string;
+  provider: string;
+  clientId: string;
+  clientSecretMasked: string;
+  enabled: boolean;
+  isShared: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertOAuthProviderRequest {
+  provider: string;
+  clientId?: string;
+  clientSecret?: string;
+  enabled: boolean;
+}
 
 export interface WidgetConfig {
   projectId: string;

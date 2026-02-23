@@ -15,6 +15,7 @@ export function ProjectTabs({ projectId, projectName }: ProjectTabsProps) {
     { href: `/projects/${projectId}`, label: "Overview", exact: true },
     { href: `/projects/${projectId}/users`, label: "Users" },
     { href: `/projects/${projectId}/api-keys`, label: "API Keys" },
+    { href: `/projects/${projectId}/environments`, label: "Environments" },
     { href: `/projects/${projectId}/customize`, label: "Widget" },
   ];
 
