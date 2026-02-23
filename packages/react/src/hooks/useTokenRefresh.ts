@@ -45,16 +45,21 @@ export function useTokenRefresh({
   const refreshTokenRef = useRef(refreshToken);
   refreshTokenRef.current = refreshToken;
 
-  const doRefresh = useCallback(async () => {
+  const doRefresh = useCallback(async (): Promise<boolean> => {
     const currentRefreshToken = refreshTokenRef.current;
-    if (!currentRefreshToken || isRefreshingRef.current) return;
+    if (!currentRefreshToken || isRefreshingRef.current) return false;
 
     isRefreshingRef.current = true;
     try {
       const response = await refreshTokenApi(apiUrl, currentRefreshToken);
       onRefreshRef.current(response.accessToken, response.refreshToken);
-    } catch {
-      onRefreshFailureRef.current();
+      return true;
+    } catch (error: unknown) {
+      const status = (error as { status?: number })?.status;
+      if (status === 401 || status === 403) {
+        onRefreshFailureRef.current();
+      }
+      return false;
     } finally {
       isRefreshingRef.current = false;
     }

@@ -104,12 +104,15 @@ const PermitProviderInner = ({
   useEffect(() => {
     if (!isTokenInvalid || !token) return;
 
-    if (refreshToken) {
+    const storedRefresh = refreshToken
+      ?? localStorage.getItem(`permit_refresh_token_${projectId}`);
+
+    if (storedRefresh) {
       doRefresh();
     } else {
       clearCredentials();
     }
-  }, [isTokenInvalid, token, refreshToken, doRefresh, clearCredentials]);
+  }, [isTokenInvalid, token, refreshToken, doRefresh, clearCredentials, projectId]);
 
   const login = useCallback(() => {
     if (!token) setIsModalOpen(true);
