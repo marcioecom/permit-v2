@@ -198,7 +198,7 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 		}
 	}
 
-	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, input.ProjectID, "email")
+	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, input.ProjectID, "", "email")
 	if err != nil {
 		return nil, fmt.Errorf("token_generation_failed")
 	}

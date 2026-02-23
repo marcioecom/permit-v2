@@ -105,7 +105,7 @@ func (m *mockEmailService) SendOTP(to, code, projectName string) error {
 
 type mockJWTService struct{}
 
-func (m *mockJWTService) SignAccessToken(email, userID, projectID, source string) (string, error) {
+func (m *mockJWTService) SignAccessToken(email, userID, projectID, environmentID, source string) (string, error) {
 	return "mock-access-token-" + userID, nil
 }
 

@@ -16,10 +16,11 @@ const (
 // AccessTokenClaims represents the claims in an access token
 type AccessTokenClaims struct {
 	jwt.RegisteredClaims
-	Email     string `json:"email"`
-	UserID    string `json:"uid"`
-	ProjectID string `json:"pid"`
-	Provider  string `json:"provider"` // "magic_link" | "google"
+	Email         string `json:"email"`
+	UserID        string `json:"uid"`
+	ProjectID     string `json:"pid"`
+	EnvironmentID string `json:"eid,omitempty"`
+	Provider      string `json:"provider"` // "email" | "google" | "github"
 }
 
 // RefreshTokenClaims represents the claims in a refresh token
@@ -45,7 +46,7 @@ func NewJWTService(keyManager *KeyManager, issuer string) *JWTService {
 }
 
 // SignAccessToken creates a signed access token
-func (s *JWTService) SignAccessToken(email, userID, projectID, provider string) (string, error) {
+func (s *JWTService) SignAccessToken(email, userID, projectID, environmentID, provider string) (string, error) {
 	if !s.keyManager.IsLoaded() {
 		return "", fmt.Errorf("keys not loaded")
 	}
@@ -61,10 +62,11 @@ func (s *JWTService) SignAccessToken(email, userID, projectID, provider string) 
 			NotBefore: jwt.NewNumericDate(now),
 			ID:        ulid.Make().String(),
 		},
-		Email:     email,
-		UserID:    userID,
-		ProjectID: projectID,
-		Provider:  provider,
+		Email:         email,
+		UserID:        userID,
+		ProjectID:     projectID,
+		EnvironmentID: environmentID,
+		Provider:      provider,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)

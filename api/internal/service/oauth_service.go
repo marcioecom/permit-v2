@@ -268,7 +268,7 @@ func (s *OAuthService) ExchangeToken(ctx context.Context, input TokenExchangeInp
 		return nil, err
 	}
 
-	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, env.ProjectID, authCode.Provider)
+	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, env.ProjectID, authCode.EnvironmentID, authCode.Provider)
 	if err != nil {
 		return nil, fmt.Errorf("token_generation_failed")
 	}
