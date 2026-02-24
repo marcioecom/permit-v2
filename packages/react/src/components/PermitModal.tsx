@@ -63,8 +63,7 @@ export const PermitModal = ({
     try {
       const response = await oauthAuthorize(apiUrl, {
         provider,
-        // TODO: get environmentId from context
-        environmentId: `env_${projectId}`,
+        environmentId: widgetConfig?.defaultEnvironmentId || "",
         redirectUrl: ssoCallbackUrl || "/sso-callback",
       });
       window.location.href = response.authorizationUrl;

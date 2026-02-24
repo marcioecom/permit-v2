@@ -31,6 +31,7 @@ export interface APIKey {
   clientId: string;
   clientSecretMasked: string;
   status: string;
+  environmentName?: string;
   lastUsedAt?: string;
   createdAt: string;
 }

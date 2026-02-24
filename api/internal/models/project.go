@@ -20,6 +20,7 @@ type Project struct {
 type APIKey struct {
 	ID               string     `json:"id"`
 	ProjectID        string     `json:"projectId"`
+	EnvironmentID    string     `json:"environmentId"`
 	Name             string     `json:"name"`
 	ClientID         string     `json:"clientId"`
 	ClientSecretHash string     `json:"-"`

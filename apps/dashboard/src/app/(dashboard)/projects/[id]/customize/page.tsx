@@ -5,7 +5,7 @@ import { Button, GlassCard, Toggle } from "@/components/ui";
 import { useOAuthProviders, useProject, useSelectedEnvironment, useWidget } from "@/hooks";
 import { IconBrandGithub, IconBrandGoogle, IconMail } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Tab = "design" | "methods" | "advanced" | "integration";
 
@@ -63,9 +63,24 @@ export default function CustomizePage() {
     }
   };
 
+  const [credentialInputs, setCredentialInputs] = useState<Record<string, { clientId: string; clientSecret: string }>>({});
+
+  const isProduction = environment?.type === "production";
+
   const handleToggleProvider = (provider: string, enabled: boolean) => {
     upsertProvider.mutate({ provider, enabled });
   };
+
+  const handleSaveCredentials = useCallback((provider: string) => {
+    const creds = credentialInputs[provider];
+    if (!creds?.clientId || !creds?.clientSecret) return;
+    upsertProvider.mutate({
+      provider,
+      clientId: creds.clientId,
+      clientSecret: creds.clientSecret,
+      enabled: true,
+    });
+  }, [credentialInputs, upsertProvider]);
 
   const oauthProviders = [
     { key: "google", label: "Google", desc: "Sign in with Google", icon: IconBrandGoogle },
@@ -189,25 +204,63 @@ export default function CustomizePage() {
                       const config = providers.find((p) => p.provider === provider.key);
                       const isEnabled = config?.enabled ?? false;
                       const Icon = provider.icon;
+                      const creds = credentialInputs[provider.key] || { clientId: "", clientSecret: "" };
                       return (
-                        <div key={provider.key} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
-                              <Icon className="w-5 h-5 text-slate-400" />
+                        <div key={provider.key} className="p-4 bg-slate-50 rounded-xl space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
+                                <Icon className="w-5 h-5 text-slate-400" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800">{provider.label}</p>
+                                <p className="text-xs text-slate-400">{provider.desc}</p>
+                                {isEnabled && config?.isShared && (
+                                  <p className="text-xs text-blue-500 mt-0.5">Using shared dev credentials</p>
+                                )}
+                                {isEnabled && !config?.isShared && config?.clientId && (
+                                  <p className="text-xs text-emerald-500 mt-0.5">Using custom credentials</p>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium text-slate-800">{provider.label}</p>
-                              <p className="text-xs text-slate-400">{provider.desc}</p>
-                              {isEnabled && config?.isShared && (
-                                <p className="text-xs text-blue-500 mt-0.5">Using shared dev credentials</p>
-                              )}
-                            </div>
+                            <Toggle
+                              enabled={isEnabled}
+                              disabled={upsertProvider.isPending}
+                              onChange={(newVal) => handleToggleProvider(provider.key, newVal)}
+                            />
                           </div>
-                          <Toggle
-                            enabled={isEnabled}
-                            disabled={upsertProvider.isPending}
-                            onChange={(newVal) => handleToggleProvider(provider.key, newVal)}
-                          />
+                          {isEnabled && isProduction && (
+                            <div className="pl-14 space-y-2">
+                              <p className="text-xs font-medium text-slate-500">Production credentials required</p>
+                              <input
+                                type="text"
+                                placeholder="Client ID"
+                                value={creds.clientId}
+                                onChange={(e) => setCredentialInputs((prev) => ({
+                                  ...prev,
+                                  [provider.key]: { ...prev[provider.key], clientId: e.target.value, clientSecret: prev[provider.key]?.clientSecret || "" },
+                                }))}
+                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none"
+                              />
+                              <input
+                                type="password"
+                                placeholder="Client Secret"
+                                value={creds.clientSecret}
+                                onChange={(e) => setCredentialInputs((prev) => ({
+                                  ...prev,
+                                  [provider.key]: { ...prev[provider.key], clientSecret: e.target.value, clientId: prev[provider.key]?.clientId || "" },
+                                }))}
+                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none"
+                              />
+                              <Button
+                                size="sm"
+                                disabled={!creds.clientId || !creds.clientSecret || upsertProvider.isPending}
+                                onClick={() => handleSaveCredentials(provider.key)}
+                              >
+                                Save Credentials
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

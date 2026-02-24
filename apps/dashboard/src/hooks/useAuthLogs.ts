@@ -14,9 +14,9 @@ export interface AuthLog {
   projectId: string;
   projectName: string;
   status: "SUCCESS" | "FAILED" | "OTP_SENT" | "EXPIRED";
+  authProvider: string;
   ipAddress: string;
   timestamp: string;
-  metadata?: Record<string, unknown>;
 }
 
 interface UseAuthLogsOptions {

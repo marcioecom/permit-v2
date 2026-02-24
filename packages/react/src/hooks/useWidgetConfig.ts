@@ -27,6 +27,7 @@ export function useWidgetConfig({ apiUrl, projectId }: UseWidgetConfigOptions) {
           showSecuredBadge: data.themeConfig?.showSecuredBadge ?? true,
           termsUrl: data.themeConfig?.termsUrl,
           privacyUrl: data.themeConfig?.privacyUrl,
+          defaultEnvironmentId: data.defaultEnvironmentId,
         });
       } catch (err) {
         const apiError = err as ApiError;

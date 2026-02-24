@@ -14,6 +14,7 @@ export interface WidgetConfig {
   showSecuredBadge?: boolean;
   termsUrl?: string;
   privacyUrl?: string;
+  defaultEnvironmentId?: string;
 }
 
 export interface PermitContextType {

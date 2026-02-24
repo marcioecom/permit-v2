@@ -208,12 +208,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, input CallbackInput) 
 	}
 
 	// 6. Upsert project_users
-	if err := s.projectRepo.UpsertProjectUser(ctx, env.ProjectID, userID, oauthState.Provider); err != nil {
+	if err := s.projectRepo.UpsertProjectUser(ctx, env.ProjectID, oauthState.EnvironmentID, userID, oauthState.Provider); err != nil {
 		log.Warn().Err(err).Msg("failed to upsert project user")
 	}
 
 	// 7. Log auth event
-	s.logAuthEvent(ctx, env.ProjectID, userID, profile.Email, "login", "SUCCESS", input.IPAddress, input.UserAgent)
+	s.logAuthEvent(ctx, env.ProjectID, userID, profile.Email, "login", "SUCCESS", input.IPAddress, input.UserAgent, map[string]string{"provider": oauthState.Provider})
 
 	// 8. Generate Permit authorization code
 	codeBytes := make([]byte, 32)
@@ -500,7 +500,7 @@ func (s *OAuthService) fetchGitHubPrimaryEmail(accessToken string) (string, erro
 	return "", fmt.Errorf("no verified email found")
 }
 
-func (s *OAuthService) logAuthEvent(ctx context.Context, projectID, userID, email, eventType, status, ip, ua string) {
+func (s *OAuthService) logAuthEvent(ctx context.Context, projectID, userID, email, eventType, status, ip, ua string, metadata map[string]string) {
 	err := s.projectRepo.InsertAuthLog(ctx, &models.AuthLog{
 		ID:        ulid.Make().String(),
 		ProjectID: projectID,
@@ -510,6 +510,7 @@ func (s *OAuthService) logAuthEvent(ctx context.Context, projectID, userID, emai
 		Status:    status,
 		IPAddress: ip,
 		UserAgent: ua,
+		Metadata:  metadata,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {

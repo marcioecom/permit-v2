@@ -4,7 +4,7 @@ import { ProjectTabs } from "@/components/layout";
 import { Badge, Button, GlassCard } from "@/components/ui";
 import { useProject } from "@/hooks";
 import { APIKey, dashboardApi } from "@/lib/api";
-import { IconCheck, IconKey, IconPlus, IconX } from "@tabler/icons-react";
+import { IconCheck, IconCircleFilled, IconKey, IconPlus, IconX } from "@tabler/icons-react";
 import { usePermit } from "@permitdev/react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -148,6 +148,7 @@ export default function APIKeysPage() {
             <thead>
               <tr className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">Environment</th>
                 <th className="px-6 py-4">Client ID</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Last Used</th>
@@ -158,15 +159,15 @@ export default function APIKeysPage() {
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">Loading...</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-400">Loading...</td>
                 </tr>
               ) : error && keys.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-red-500">{error}</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-red-500">{error}</td>
                 </tr>
               ) : keys.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
                       <IconKey className="w-8 h-8 text-slate-400" />
                     </div>
@@ -182,6 +183,14 @@ export default function APIKeysPage() {
                   <tr key={key.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <span className="text-sm font-bold text-slate-800">{key.name}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {key.environmentName && (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                          <IconCircleFilled className="w-2 h-2" style={{ color: key.environmentName.toLowerCase().includes("production") ? "#10b981" : key.environmentName.toLowerCase().includes("staging") ? "#f59e0b" : "#6b7280" }} />
+                          {key.environmentName}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <code className="text-xs text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded">{key.clientId}</code>

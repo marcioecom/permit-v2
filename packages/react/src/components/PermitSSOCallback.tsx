@@ -17,12 +17,13 @@ export const PermitSSOCallback = ({
   onSuccess,
   onError,
 }: PermitSSOCallbackProps) => {
-  const { apiUrl, projectId } = usePermit();
+  const { apiUrl, projectId, widgetConfig } = usePermit();
   const [error, setError] = useState<string | null>(null);
   const processedRef = useRef(false);
 
   useEffect(() => {
     if (processedRef.current) return;
+    if (!widgetConfig?.defaultEnvironmentId) return;
     processedRef.current = true;
 
     const params = new URLSearchParams(window.location.search);
@@ -39,7 +40,7 @@ export const PermitSSOCallback = ({
       try {
         const response = await oauthExchangeToken(apiUrl, {
           code,
-          environmentId: `env_${projectId}`,
+          environmentId: widgetConfig?.defaultEnvironmentId || "",
         });
 
         // Store credentials using same localStorage pattern as OTP flow
@@ -59,7 +60,7 @@ export const PermitSSOCallback = ({
     };
 
     exchangeCode();
-  }, [apiUrl, projectId, afterSignInUrl, onSuccess, onError]);
+  }, [apiUrl, projectId, widgetConfig, afterSignInUrl, onSuccess, onError]);
 
   if (error) {
     return (

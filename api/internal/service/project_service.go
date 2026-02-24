@@ -10,11 +10,12 @@ import (
 )
 
 type ProjectService struct {
-	repo repository.ProjectRepository
+	repo    repository.ProjectRepository
+	envRepo repository.EnvironmentRepository
 }
 
-func NewProjectService(repo repository.ProjectRepository) *ProjectService {
-	return &ProjectService{repo: repo}
+func NewProjectService(repo repository.ProjectRepository, envRepo repository.EnvironmentRepository) *ProjectService {
+	return &ProjectService{repo: repo, envRepo: envRepo}
 }
 
 type CreateProjectInput struct {
@@ -54,6 +55,18 @@ func (s *ProjectService) CreateProject(ctx context.Context, input CreateProjectI
 		return nil, err
 	}
 
+	// Create default development environment
+	env := &models.Environment{
+		ID:             ulid.Make().String(),
+		ProjectID:      project.ID,
+		Name:           "Development",
+		Type:           models.EnvTypeDevelopment,
+		AllowedOrigins: input.AllowedOrigins,
+	}
+	if err := s.envRepo.Create(ctx, env); err != nil {
+		return nil, err
+	}
+
 	clientID := repository.GenerateClientID()
 	clientSecret, secretHash, err := repository.GenerateClientSecret()
 	if err != nil {
@@ -63,6 +76,7 @@ func (s *ProjectService) CreateProject(ctx context.Context, input CreateProjectI
 	apiKey := &models.APIKey{
 		ID:               ulid.Make().String(),
 		ProjectID:        project.ID,
+		EnvironmentID:    env.ID,
 		Name:             "Default",
 		ClientID:         clientID,
 		ClientSecretHash: secretHash,
@@ -123,6 +137,14 @@ func (s *ProjectService) GetWidget(ctx context.Context, projectID string) (*mode
 	return s.repo.GetWidget(ctx, projectID)
 }
 
+func (s *ProjectService) GetDefaultEnvironmentID(ctx context.Context, projectID string) string {
+	env, err := s.envRepo.GetDefaultForProject(ctx, projectID)
+	if err != nil || env == nil {
+		return ""
+	}
+	return env.ID
+}
+
 type UpdateWidgetInput struct {
 	ProjectID        string
 	Title            string
@@ -155,6 +177,12 @@ type CreateAPIKeyOutput struct {
 }
 
 func (s *ProjectService) CreateAPIKey(ctx context.Context, input CreateAPIKeyInput) (*CreateAPIKeyOutput, error) {
+	// Resolve default environment for the project
+	env, err := s.envRepo.GetDefaultForProject(ctx, input.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("environment_not_found")
+	}
+
 	clientID := repository.GenerateClientID()
 	clientSecret, secretHash, err := repository.GenerateClientSecret()
 	if err != nil {
@@ -169,6 +197,7 @@ func (s *ProjectService) CreateAPIKey(ctx context.Context, input CreateAPIKeyInp
 	apiKey := &models.APIKey{
 		ID:               ulid.Make().String(),
 		ProjectID:        input.ProjectID,
+		EnvironmentID:    env.ID,
 		Name:             name,
 		ClientID:         clientID,
 		ClientSecretHash: secretHash,

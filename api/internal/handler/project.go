@@ -121,17 +121,29 @@ func (h *ProjectHandler) GetWidget(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to get widget")
 		return
 	}
+
+	defaultEnvID := h.service.GetDefaultEnvironmentID(r.Context(), id)
+
 	if widget == nil {
 		writeSuccess(w, http.StatusOK, map[string]any{
-			"projectId":        id,
-			"title":            "Welcome",
-			"subtitle":         "",
-			"enabledProviders": []string{"email"},
+			"projectId":            id,
+			"title":                "Welcome",
+			"subtitle":             "",
+			"enabledProviders":     []string{"email"},
+			"defaultEnvironmentId": defaultEnvID,
 		})
 		return
 	}
 
-	writeSuccess(w, http.StatusOK, widget)
+	// Wrap widget with defaultEnvironmentId
+	type widgetResponse struct {
+		*models.Widget
+		DefaultEnvironmentID string `json:"defaultEnvironmentId"`
+	}
+	writeSuccess(w, http.StatusOK, widgetResponse{
+		Widget:               widget,
+		DefaultEnvironmentID: defaultEnvID,
+	})
 }
 
 type UpdateWidgetRequest struct {

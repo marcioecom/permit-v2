@@ -71,7 +71,7 @@ func main() {
 
 	authService := service.NewAuthService(jwtService, emailService, userRepo, otpRepo, identityRepo, projectRepo, envRepo)
 	sessionService := service.NewSessionService(jwtService, userRepo)
-	projectService := service.NewProjectService(projectRepo)
+	projectService := service.NewProjectService(projectRepo, envRepo)
 	oauthService := service.NewOAuthService(cfg, jwtService, oauthRepo, envRepo, userRepo, identityRepo, projectRepo)
 	envService := service.NewEnvironmentService(envRepo, oauthRepo, projectRepo)
 
