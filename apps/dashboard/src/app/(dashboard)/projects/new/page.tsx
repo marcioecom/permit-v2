@@ -65,7 +65,7 @@ export default function CreateProjectPage() {
           <div className="space-y-4 mb-8">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Project Name</label>
-              <p className="text-slate-800 font-medium">{credentials.name}</p>
+              <p className="text-slate-800 font-medium">{credentials.project.name}</p>
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Client ID</label>
@@ -85,7 +85,7 @@ export default function CreateProjectPage() {
           <Button
             size="lg"
             className="w-full"
-            onClick={() => router.push(`/projects/${credentials.id}`)}
+            onClick={() => router.push(`/projects/${credentials.project.id}`)}
           >
             Go to Project
           </Button>

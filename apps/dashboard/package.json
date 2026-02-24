@@ -11,7 +11,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@permitdev/react": "^0.3.0",
+    "@permitdev/react": "^0.4.0",
     "@tabler/icons-react": "^3.37.1",
     "@tanstack/react-query": "^5.90.13",
     "axios": "^1.13.2",
@@ -19,7 +19,8 @@
     "framer-motion": "^11.18.2",
     "next": "16.1.4",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -13,3 +13,6 @@ sdk/dist
 
 # Worktrees
 .worktrees/
+
+# Compiled binaries
+api/server

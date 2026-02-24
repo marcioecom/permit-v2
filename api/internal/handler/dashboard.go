@@ -238,6 +238,28 @@ func (h *DashboardHandler) RevokeAPIKey(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+func (h *DashboardHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	projectID := chi.URLParam(r, "id")
+
+	err := h.projectService.DeleteProject(r.Context(), projectID, ownerID)
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		if err.Error() == "project_not_found" {
+			writeError(w, http.StatusNotFound, "not_found", "Project not found")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to delete project")
+		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to delete project")
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, map[string]string{"message": "Project deleted"})
+}
+
 // --- Environment endpoints ---
 
 func (h *DashboardHandler) ListEnvironments(w http.ResponseWriter, r *http.Request) {

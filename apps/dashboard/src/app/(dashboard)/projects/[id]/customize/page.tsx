@@ -5,7 +5,8 @@ import { Button, GlassCard, Toggle } from "@/components/ui";
 import { useOAuthProviders, useProject, useSelectedEnvironment, useWidget } from "@/hooks";
 import { IconBrandGithub, IconBrandGoogle, IconMail } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type Tab = "design" | "methods" | "advanced" | "integration";
 
@@ -25,7 +26,6 @@ export default function CustomizePage() {
   const [privacyUrl, setPrivacyUrl] = useState("");
   const [showBadge, setShowBadge] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (widget) {
@@ -41,7 +41,6 @@ export default function CustomizePage() {
 
   const handleSave = async () => {
     setSaving(true);
-    setSaved(false);
     try {
       const enabledProviders = ["email", ...providers.filter((p) => p.enabled).map((p) => p.provider)];
       await updateWidget.mutateAsync({
@@ -56,22 +55,34 @@ export default function CustomizePage() {
         },
         enabledProviders,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success("Changes saved");
+    } catch {
+      toast.error("Failed to save changes");
     } finally {
       setSaving(false);
     }
   };
 
   const [credentialInputs, setCredentialInputs] = useState<Record<string, { clientId: string; clientSecret: string }>>({});
+  const [pendingEnable, setPendingEnable] = useState<Record<string, boolean>>({});
 
-  const isProduction = environment?.type === "production";
+  const isDev = environment?.type === "development";
 
   const handleToggleProvider = (provider: string, enabled: boolean) => {
-    upsertProvider.mutate({ provider, enabled });
+    if (enabled && !isDev) {
+      // For non-dev environments, show credential form instead of sending request
+      setPendingEnable((prev) => ({ ...prev, [provider]: true }));
+      return;
+    }
+    if (!enabled) {
+      setPendingEnable((prev) => ({ ...prev, [provider]: false }));
+    }
+    upsertProvider.mutate({ provider, enabled }, {
+      onError: () => toast.error(`Failed to update ${provider} provider`),
+    });
   };
 
-  const handleSaveCredentials = useCallback((provider: string) => {
+  const handleSaveCredentials = (provider: string) => {
     const creds = credentialInputs[provider];
     if (!creds?.clientId || !creds?.clientSecret) return;
     upsertProvider.mutate({
@@ -79,8 +90,15 @@ export default function CustomizePage() {
       clientId: creds.clientId,
       clientSecret: creds.clientSecret,
       enabled: true,
+    }, {
+      onSuccess: () => {
+        setPendingEnable((prev) => ({ ...prev, [provider]: false }));
+        setCredentialInputs((prev) => ({ ...prev, [provider]: { clientId: "", clientSecret: "" } }));
+        toast.success(`${provider} credentials saved`);
+      },
+      onError: () => toast.error(`Failed to save ${provider} credentials`),
     });
-  }, [credentialInputs, upsertProvider]);
+  };
 
   const oauthProviders = [
     { key: "google", label: "Google", desc: "Sign in with Google", icon: IconBrandGoogle },
@@ -134,7 +152,7 @@ export default function CustomizePage() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Sign in to Your App"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div>
@@ -144,7 +162,7 @@ export default function CustomizePage() {
                         value={subtitle}
                         onChange={(e) => setSubtitle(e.target.value)}
                         placeholder="Welcome! Please sign in to continue."
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div>
@@ -171,7 +189,7 @@ export default function CustomizePage() {
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
                         placeholder="https://yourapp.com/logo.png"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                   </div>
@@ -203,8 +221,11 @@ export default function CustomizePage() {
                     {oauthProviders.map((provider) => {
                       const config = providers.find((p) => p.provider === provider.key);
                       const isEnabled = config?.enabled ?? false;
+                      const isPending = pendingEnable[provider.key] ?? false;
+                      const showToggleOn = isEnabled || isPending;
                       const Icon = provider.icon;
                       const creds = credentialInputs[provider.key] || { clientId: "", clientSecret: "" };
+                      const showCredForm = !isDev && (isPending || (isEnabled && !config?.isShared));
                       return (
                         <div key={provider.key} className="p-4 bg-slate-50 rounded-xl space-y-3">
                           <div className="flex items-center justify-between">
@@ -224,14 +245,16 @@ export default function CustomizePage() {
                               </div>
                             </div>
                             <Toggle
-                              enabled={isEnabled}
+                              enabled={showToggleOn}
                               disabled={upsertProvider.isPending}
                               onChange={(newVal) => handleToggleProvider(provider.key, newVal)}
                             />
                           </div>
-                          {isEnabled && isProduction && (
+                          {showCredForm && (
                             <div className="pl-14 space-y-2">
-                              <p className="text-xs font-medium text-slate-500">Production credentials required</p>
+                              <p className="text-xs font-medium text-slate-500">
+                                {isPending ? "Enter your credentials to enable" : "Update credentials"}
+                              </p>
                               <input
                                 type="text"
                                 placeholder="Client ID"
@@ -240,7 +263,7 @@ export default function CustomizePage() {
                                   ...prev,
                                   [provider.key]: { ...prev[provider.key], clientId: e.target.value, clientSecret: prev[provider.key]?.clientSecret || "" },
                                 }))}
-                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none"
+                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none"
                               />
                               <input
                                 type="password"
@@ -250,15 +273,26 @@ export default function CustomizePage() {
                                   ...prev,
                                   [provider.key]: { ...prev[provider.key], clientSecret: e.target.value, clientId: prev[provider.key]?.clientId || "" },
                                 }))}
-                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none"
+                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none"
                               />
-                              <Button
-                                size="sm"
-                                disabled={!creds.clientId || !creds.clientSecret || upsertProvider.isPending}
-                                onClick={() => handleSaveCredentials(provider.key)}
-                              >
-                                Save Credentials
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  disabled={!creds.clientId || !creds.clientSecret || upsertProvider.isPending}
+                                  onClick={() => handleSaveCredentials(provider.key)}
+                                >
+                                  Save Credentials
+                                </Button>
+                                {isPending && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setPendingEnable((prev) => ({ ...prev, [provider.key]: false }))}
+                                  >
+                                    Cancel
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -279,7 +313,7 @@ export default function CustomizePage() {
                         value={termsUrl}
                         onChange={(e) => setTermsUrl(e.target.value)}
                         placeholder="https://yourapp.com/terms"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div>
@@ -289,7 +323,7 @@ export default function CustomizePage() {
                         value={privacyUrl}
                         onChange={(e) => setPrivacyUrl(e.target.value)}
                         placeholder="https://yourapp.com/privacy"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
@@ -329,9 +363,6 @@ export default function CustomizePage() {
                   <Button isLoading={saving} onClick={handleSave}>
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
-                  {saved && (
-                    <span className="text-sm font-medium text-emerald-600">Saved!</span>
-                  )}
                 </div>
               )}
             </>

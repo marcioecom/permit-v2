@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { User } from "@/context/PermitContext";
+import type { User, WidgetConfig } from "@/context/PermitContext";
 import { usePermit } from "@/hooks/usePermit";
 import { oauthAuthorize, startOtp, verifyOtp } from "@/lib/api";
 import { ApiError } from "@/lib/api-client";
@@ -25,16 +25,7 @@ interface PermitModalProps {
   apiUrl?: string;
   onClose?: () => void;
   onSuccess?: (accessToken: string, refreshToken: string, user: User) => void;
-  widgetConfig?: {
-    title?: string;
-    subtitle?: string;
-    enabledProviders?: string[];
-    primaryColor?: string;
-    logoUrl?: string;
-    showSecuredBadge?: boolean;
-    termsUrl?: string;
-    privacyUrl?: string;
-  } | null;
+  widgetConfig?: WidgetConfig | null;
 }
 
 export const PermitModal = ({
@@ -48,6 +39,7 @@ export const PermitModal = ({
   const projectId = propProjectId ?? context.projectId;
   const apiUrl = propApiUrl ?? context.apiUrl;
   const widgetConfig = propWidgetConfig ?? context.widgetConfig;
+  const { configError } = context;
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -164,6 +156,12 @@ export const PermitModal = ({
             </p>
           )}
         </DialogHeader>
+
+        {configError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+            {configError}
+          </div>
+        )}
 
         {/* Socials Login - only show if social providers are enabled */}
         {step === "email" && (() => {

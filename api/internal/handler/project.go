@@ -125,13 +125,7 @@ func (h *ProjectHandler) GetWidget(w http.ResponseWriter, r *http.Request) {
 	defaultEnvID := h.service.GetDefaultEnvironmentID(r.Context(), id)
 
 	if widget == nil {
-		writeSuccess(w, http.StatusOK, map[string]any{
-			"projectId":            id,
-			"title":                "Welcome",
-			"subtitle":             "",
-			"enabledProviders":     []string{"email"},
-			"defaultEnvironmentId": defaultEnvID,
-		})
+		writeError(w, http.StatusNotFound, "widget_not_configured", "Widget has not been configured for this project. Please configure it in the dashboard.")
 		return
 	}
 
@@ -176,7 +170,8 @@ func (h *ProjectHandler) UpdateWidget(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateAPIKeyRequest struct {
-	Name string `json:"name"`
+	Name          string `json:"name"`
+	EnvironmentID string `json:"environmentId"`
 }
 
 func (h *ProjectHandler) CreateAPIKey(w http.ResponseWriter, r *http.Request) {
@@ -188,8 +183,9 @@ func (h *ProjectHandler) CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	output, err := h.service.CreateAPIKey(r.Context(), service.CreateAPIKeyInput{
-		ProjectID: id,
-		Name:      req.Name,
+		ProjectID:     id,
+		Name:          req.Name,
+		EnvironmentID: req.EnvironmentID,
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to create API key")

@@ -2,7 +2,7 @@
 
 import { ProjectTabs } from "@/components/layout";
 import { Badge, Button, GlassCard } from "@/components/ui";
-import { useProject } from "@/hooks";
+import { useEnvironments, useProject } from "@/hooks";
 import { APIKey, dashboardApi } from "@/lib/api";
 import { IconCheck, IconCircleFilled, IconKey, IconPlus, IconX } from "@tabler/icons-react";
 import { usePermit } from "@permitdev/react";
@@ -19,7 +19,9 @@ export default function APIKeysPage() {
   const [error, setError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyEnvId, setNewKeyEnvId] = useState("");
   const [creating, setCreating] = useState(false);
+  const { environments } = useEnvironments(projectId);
   const [newKey, setNewKey] = useState<{ clientId: string; clientSecret: string } | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
 
@@ -45,9 +47,10 @@ export default function APIKeysPage() {
     if (!newKeyName.trim()) return;
     try {
       setCreating(true);
-      const res = await dashboardApi.createAPIKey(token!, projectId, newKeyName);
+      const res = await dashboardApi.createAPIKey(token!, projectId, newKeyName, newKeyEnvId || undefined);
       setNewKey({ clientId: res.clientId, clientSecret: res.clientSecret });
       setNewKeyName("");
+      setNewKeyEnvId("");
       setShowCreate(false);
       loadKeys();
     } catch {
@@ -129,12 +132,22 @@ export default function APIKeysPage() {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+              className="flex-1 min-w-[200px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
             />
+            <select
+              value={newKeyEnvId}
+              onChange={(e) => setNewKeyEnvId(e.target.value)}
+              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+            >
+              <option value="">Default environment</option>
+              {environments.map((env) => (
+                <option key={env.id} value={env.id}>{env.name}</option>
+              ))}
+            </select>
             <Button isLoading={creating} disabled={!newKeyName.trim()} onClick={handleCreate}>
               Create
             </Button>
-            <Button variant="ghost" onClick={() => { setShowCreate(false); setNewKeyName(""); }}>
+            <Button variant="ghost" onClick={() => { setShowCreate(false); setNewKeyName(""); setNewKeyEnvId(""); }}>
               Cancel
             </Button>
           </div>

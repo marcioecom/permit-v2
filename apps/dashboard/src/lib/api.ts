@@ -54,8 +54,10 @@ export interface CreateProjectRequest {
 }
 
 export interface CreateProjectResponse {
-  id: string;
-  name: string;
+  project: {
+    id: string;
+    name: string;
+  };
   clientId: string;
   clientSecret: string;
 }
@@ -127,13 +129,20 @@ export const dashboardApi = {
     return res.data.data;
   },
 
-  async createAPIKey(token: string, projectId: string, name: string) {
+  async createAPIKey(token: string, projectId: string, name: string, environmentId?: string) {
     const res = await axios.post(
       `${API_URL}/projects/${projectId}/api-keys`,
-      { name },
+      { name, environmentId },
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return res.data.data;
+  },
+
+  async deleteProject(token: string, projectId: string) {
+    const res = await axios.delete(`${API_URL}/dashboard/projects/${projectId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data;
   },
 
   async revokeAPIKey(token: string, projectId: string, keyId: string) {
@@ -145,10 +154,15 @@ export const dashboardApi = {
 
   // Widget
   async getWidget(token: string, projectId: string): Promise<WidgetConfig | null> {
-    const res = await axios.get(`${API_URL}/projects/${projectId}/widget`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data.data;
+    try {
+      const res = await axios.get(`${API_URL}/projects/${projectId}/widget`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.data;
+    } catch (err: any) {
+      if (err?.response?.status === 404) return null;
+      throw err;
+    }
   },
 
   async updateWidget(token: string, projectId: string, data: Partial<WidgetConfig>) {

@@ -37,6 +37,7 @@ type ProjectRepository interface {
 	GetDashboardStats(ctx context.Context, ownerID string) (*models.DashboardStats, error)
 	GetUserStats(ctx context.Context, ownerID string) (*models.UserStats, error)
 	UpsertProjectUser(ctx context.Context, projectID, environmentID, userID, provider string) error
+	DeleteProject(ctx context.Context, projectID string) error
 }
 
 type postgresProjectRepo struct {
@@ -766,4 +767,34 @@ func formatCount(n int) string {
 	}
 	v := float64(n) / 1000000
 	return fmt.Sprintf("%.1fM", v)
+}
+
+func (r *postgresProjectRepo) DeleteProject(ctx context.Context, projectID string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Delete in dependency order
+	queries := []string{
+		`DELETE FROM oauth_authorization_codes WHERE environment_id IN (SELECT id FROM environments WHERE project_id = $1)`,
+		`DELETE FROM oauth_states WHERE environment_id IN (SELECT id FROM environments WHERE project_id = $1)`,
+		`DELETE FROM oauth_provider_configs WHERE environment_id IN (SELECT id FROM environments WHERE project_id = $1)`,
+		`DELETE FROM auth_logs WHERE project_id = $1`,
+		`DELETE FROM otp_codes WHERE project_id = $1`,
+		`DELETE FROM project_users WHERE project_id = $1`,
+		`DELETE FROM project_api_keys WHERE project_id = $1`,
+		`DELETE FROM widgets WHERE project_id = $1`,
+		`DELETE FROM environments WHERE project_id = $1`,
+		`DELETE FROM projects WHERE id = $1`,
+	}
+
+	for _, q := range queries {
+		if _, err := tx.Exec(ctx, q, projectID); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
 }

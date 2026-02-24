@@ -69,6 +69,7 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 
 			r.Get("/projects", h.Dashboard.ListProjects)
 			r.Get("/projects/{id}", h.Dashboard.GetProject)
+			r.Delete("/projects/{id}", h.Dashboard.DeleteProject)
 			r.Get("/projects/{id}/users", h.Dashboard.ListProjectUsers)
 			r.Get("/projects/{id}/api-keys", h.Dashboard.ListAPIKeys)
 			r.Delete("/projects/{id}/api-keys/{keyId}", h.Dashboard.RevokeAPIKey)

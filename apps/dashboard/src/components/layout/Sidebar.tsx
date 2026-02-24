@@ -9,7 +9,7 @@ import {
   IconShieldCheck,
   IconUsers,
 } from "@tabler/icons-react";
-import { motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
@@ -22,7 +22,7 @@ const navItems: { href: string; label: string; icon: ComponentType<{ className?:
   { href: "/logs", label: "Auth Logs", icon: IconFileText },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, layoutId }: { onNavigate?: () => void; layoutId: string }) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
@@ -42,31 +42,35 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-4 space-y-1">
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={`relative flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${active
-                ? "text-[var(--accent)] bg-[var(--accent-light)]"
-                : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                }`}
-            >
-              <Icon className="w-5 h-5" />
-              {item.label}
-              {active && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute right-2 w-2 h-2 rounded-full bg-[var(--accent)]"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
-              )}
-            </Link>
-          );
-        })}
+        <LayoutGroup id={layoutId}>
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                className={`relative flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${active
+                  ? "text-[var(--accent)] bg-[var(--accent-light)]"
+                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+              >
+                <Icon className="w-5 h-5" />
+                {item.label}
+                <AnimatePresence>
+                  {active && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute right-2 w-2 h-2 rounded-full bg-[var(--accent)]"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </AnimatePresence>
+              </Link>
+            );
+          })}
+        </LayoutGroup>
       </nav>
 
       {/* Documentation link */}
@@ -96,7 +100,7 @@ export function Sidebar() {
         className="hidden md:flex w-64 border-r border-slate-100 flex-col fixed inset-y-0 z-50 bg-white"
         style={{ viewTransitionName: "sidebar" }}
       >
-        <SidebarContent />
+        <SidebarContent layoutId="desktop" />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -113,7 +117,7 @@ export function Sidebar() {
         transition={{ type: "spring", stiffness: 400, damping: 35 }}
         className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-100 flex flex-col md:hidden"
       >
-        <SidebarContent onNavigate={close} />
+        <SidebarContent onNavigate={close} layoutId="mobile" />
       </motion.aside>
     </>
   );

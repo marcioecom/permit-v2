@@ -96,6 +96,17 @@ func (s *ProjectService) GetProject(ctx context.Context, id string) (*models.Pro
 	return s.repo.GetByID(ctx, id)
 }
 
+func (s *ProjectService) DeleteProject(ctx context.Context, projectID, ownerID string) error {
+	project, err := s.repo.GetByID(ctx, projectID)
+	if err != nil || project == nil {
+		return fmt.Errorf("project_not_found")
+	}
+	if project.OwnerID != ownerID {
+		return fmt.Errorf("forbidden")
+	}
+	return s.repo.DeleteProject(ctx, projectID)
+}
+
 type UpdateProjectInput struct {
 	ID               string
 	Name             string
@@ -165,8 +176,9 @@ func (s *ProjectService) UpdateWidget(ctx context.Context, input UpdateWidgetInp
 }
 
 type CreateAPIKeyInput struct {
-	ProjectID string
-	Name      string
+	ProjectID     string
+	Name          string
+	EnvironmentID string
 }
 
 type CreateAPIKeyOutput struct {
@@ -177,10 +189,14 @@ type CreateAPIKeyOutput struct {
 }
 
 func (s *ProjectService) CreateAPIKey(ctx context.Context, input CreateAPIKeyInput) (*CreateAPIKeyOutput, error) {
-	// Resolve default environment for the project
-	env, err := s.envRepo.GetDefaultForProject(ctx, input.ProjectID)
-	if err != nil {
-		return nil, fmt.Errorf("environment_not_found")
+	envID := input.EnvironmentID
+	if envID == "" {
+		// Resolve default environment for the project
+		env, err := s.envRepo.GetDefaultForProject(ctx, input.ProjectID)
+		if err != nil {
+			return nil, fmt.Errorf("environment_not_found")
+		}
+		envID = env.ID
 	}
 
 	clientID := repository.GenerateClientID()
@@ -197,7 +213,7 @@ func (s *ProjectService) CreateAPIKey(ctx context.Context, input CreateAPIKeyInp
 	apiKey := &models.APIKey{
 		ID:               ulid.Make().String(),
 		ProjectID:        input.ProjectID,
-		EnvironmentID:    env.ID,
+		EnvironmentID:    envID,
 		Name:             name,
 		ClientID:         clientID,
 		ClientSecretHash: secretHash,
