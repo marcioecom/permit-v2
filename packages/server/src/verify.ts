@@ -38,6 +38,7 @@ export async function verifyToken(
       userId: claims.uid || claims.sub,
       email: claims.email,
       appId: claims.pid,
+      environmentId: claims.eid || undefined,
       provider: claims.provider,
       issuedAt: new Date((claims.iat || 0) * 1000),
       expiresAt: new Date((claims.exp || 0) * 1000),

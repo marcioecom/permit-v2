@@ -40,7 +40,7 @@ func (s *SessionService) RefreshToken(ctx context.Context, input RefreshTokenInp
 		return nil, fmt.Errorf("user_not_found")
 	}
 
-	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, claims.ProjectID, "refresh")
+	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, claims.ProjectID, "", "refresh")
 	if err != nil {
 		return nil, fmt.Errorf("token_generation_failed")
 	}

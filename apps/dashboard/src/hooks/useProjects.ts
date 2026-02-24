@@ -36,8 +36,7 @@ export function useProjects() {
   const deleteProject = useMutation({
     mutationFn: async (projectId: string) => {
       if (!token) throw new Error("Not authenticated");
-      // TODO: Implement deleteProject in dashboardApi
-      return projectId;
+      return dashboardApi.deleteProject(token, projectId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });

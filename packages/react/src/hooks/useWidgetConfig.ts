@@ -27,11 +27,12 @@ export function useWidgetConfig({ apiUrl, projectId }: UseWidgetConfigOptions) {
           showSecuredBadge: data.themeConfig?.showSecuredBadge ?? true,
           termsUrl: data.themeConfig?.termsUrl,
           privacyUrl: data.themeConfig?.privacyUrl,
+          defaultEnvironmentId: data.defaultEnvironmentId,
         });
       } catch (err) {
         const apiError = err as ApiError;
         if (apiError.status === 404) {
-          setConfigError("Invalid project ID");
+          setConfigError("Widget not configured. Please configure it in the Permit dashboard.");
         } else {
           setConfigError(
             apiError.message || "Failed to load project configuration",

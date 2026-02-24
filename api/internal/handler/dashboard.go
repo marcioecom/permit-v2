@@ -12,11 +12,15 @@ import (
 )
 
 type DashboardHandler struct {
-	projectService *service.ProjectService
+	projectService     *service.ProjectService
+	environmentService *service.EnvironmentService
 }
 
-func NewDashboardHandler(projectService *service.ProjectService) *DashboardHandler {
-	return &DashboardHandler{projectService: projectService}
+func NewDashboardHandler(projectService *service.ProjectService, environmentService *service.EnvironmentService) *DashboardHandler {
+	return &DashboardHandler{
+		projectService:     projectService,
+		environmentService: environmentService,
+	}
 }
 
 func (h *DashboardHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
@@ -232,4 +236,207 @@ func (h *DashboardHandler) RevokeAPIKey(w http.ResponseWriter, r *http.Request) 
 		"data":    result,
 		"message": "API key has been revoked",
 	})
+}
+
+func (h *DashboardHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	projectID := chi.URLParam(r, "id")
+
+	err := h.projectService.DeleteProject(r.Context(), projectID, ownerID)
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		if err.Error() == "project_not_found" {
+			writeError(w, http.StatusNotFound, "not_found", "Project not found")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to delete project")
+		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to delete project")
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, map[string]string{"message": "Project deleted"})
+}
+
+// --- Environment endpoints ---
+
+func (h *DashboardHandler) ListEnvironments(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	projectID := chi.URLParam(r, "id")
+
+	envs, err := h.environmentService.ListByProject(r.Context(), projectID, ownerID)
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to list environments")
+		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to list environments")
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, envs)
+}
+
+type CreateEnvironmentRequest struct {
+	Name string `json:"name" validate:"required"`
+	Type string `json:"type" validate:"required,oneof=development staging production"`
+}
+
+func (h *DashboardHandler) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	projectID := chi.URLParam(r, "id")
+
+	var req CreateEnvironmentRequest
+	if err := decodeAndValidate(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", err.Error())
+		return
+	}
+
+	env, err := h.environmentService.Create(r.Context(), service.CreateEnvironmentInput{
+		ProjectID: projectID,
+		Name:      req.Name,
+		Type:      req.Type,
+		OwnerID:   ownerID,
+	})
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to create environment")
+		writeError(w, http.StatusBadRequest, "creation_failed", err.Error())
+		return
+	}
+
+	writeSuccess(w, http.StatusCreated, env)
+}
+
+func (h *DashboardHandler) GetEnvironment(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	envID := chi.URLParam(r, "envId")
+
+	env, err := h.environmentService.GetByID(r.Context(), envID, ownerID)
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		writeError(w, http.StatusNotFound, "not_found", "Environment not found")
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, env)
+}
+
+type UpdateEnvironmentRequest struct {
+	Name           *string  `json:"name"`
+	AllowedOrigins []string `json:"allowedOrigins"`
+}
+
+func (h *DashboardHandler) UpdateEnvironment(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	envID := chi.URLParam(r, "envId")
+
+	var req UpdateEnvironmentRequest
+	if err := decodeAndValidate(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", err.Error())
+		return
+	}
+
+	env, err := h.environmentService.Update(r.Context(), service.UpdateEnvironmentInput{
+		EnvironmentID:  envID,
+		Name:           req.Name,
+		AllowedOrigins: req.AllowedOrigins,
+		OwnerID:        ownerID,
+	})
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to update environment")
+		writeError(w, http.StatusBadRequest, "update_failed", err.Error())
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, env)
+}
+
+// --- OAuth Provider Config endpoints ---
+
+func (h *DashboardHandler) ListOAuthProviders(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	envID := chi.URLParam(r, "envId")
+
+	configs, err := h.environmentService.ListOAuthProviders(r.Context(), envID, ownerID)
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to list OAuth providers")
+		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to list OAuth providers")
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, configs)
+}
+
+type UpsertOAuthProviderRequest struct {
+	Provider     string  `json:"provider" validate:"required,oneof=google github"`
+	Enabled      bool    `json:"enabled"`
+	ClientID     *string `json:"clientId"`
+	ClientSecret *string `json:"clientSecret"`
+}
+
+func (h *DashboardHandler) UpsertOAuthProvider(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	envID := chi.URLParam(r, "envId")
+
+	var req UpsertOAuthProviderRequest
+	if err := decodeAndValidate(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_error", err.Error())
+		return
+	}
+
+	config, err := h.environmentService.UpsertOAuthProvider(r.Context(), service.UpsertOAuthProviderInput{
+		EnvironmentID: envID,
+		Provider:      req.Provider,
+		Enabled:       req.Enabled,
+		ClientID:      req.ClientID,
+		ClientSecret:  req.ClientSecret,
+		OwnerID:       ownerID,
+	})
+	if err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to upsert OAuth provider")
+		writeError(w, http.StatusBadRequest, "upsert_failed", err.Error())
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, config)
+}
+
+func (h *DashboardHandler) DeleteOAuthProvider(w http.ResponseWriter, r *http.Request) {
+	ownerID := middleware.GetUserID(r.Context())
+	envID := chi.URLParam(r, "envId")
+	provider := chi.URLParam(r, "provider")
+
+	if err := h.environmentService.DeleteOAuthProvider(r.Context(), envID, provider, ownerID); err != nil {
+		if err.Error() == "forbidden" {
+			writeError(w, http.StatusForbidden, "forbidden", "You don't own this project")
+			return
+		}
+		log.Error().Err(err).Msg("Failed to delete OAuth provider")
+		writeError(w, http.StatusInternalServerError, "internal_error", "Failed to delete OAuth provider")
+		return
+	}
+
+	writeSuccess(w, http.StatusOK, map[string]string{"message": "Provider deleted"})
 }

@@ -29,14 +29,15 @@ type ListAuthLogsInput struct {
 }
 
 type AuthLogResponse struct {
-	ID          string `json:"id"`
-	EventType   string `json:"eventType"`
-	UserEmail   string `json:"userEmail"`
-	ProjectID   string `json:"projectId"`
-	ProjectName string `json:"projectName"`
-	Status      string `json:"status"`
-	IPAddress   string `json:"ipAddress"`
-	Timestamp   string `json:"timestamp"`
+	ID           string `json:"id"`
+	EventType    string `json:"eventType"`
+	UserEmail    string `json:"userEmail"`
+	ProjectID    string `json:"projectId"`
+	ProjectName  string `json:"projectName"`
+	Status       string `json:"status"`
+	AuthProvider string `json:"authProvider"`
+	IPAddress    string `json:"ipAddress"`
+	Timestamp    string `json:"timestamp"`
 }
 
 type ListAuthLogsOutput struct {
@@ -106,6 +107,7 @@ type APIKeyInfo struct {
 	ClientID           string  `json:"clientId"`
 	ClientSecretMasked string  `json:"clientSecretMasked"`
 	Status             string  `json:"status"`
+	EnvironmentName    string  `json:"environmentName"`
 	LastUsedAt         *string `json:"lastUsedAt"`
 	CreatedAt          string  `json:"createdAt"`
 }

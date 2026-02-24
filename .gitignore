@@ -10,3 +10,9 @@ playground/.vite
 
 # SDK
 sdk/dist
+
+# Worktrees
+.worktrees/
+
+# Compiled binaries
+api/server

@@ -2,9 +2,9 @@
 
 import { ProjectTabs } from "@/components/layout";
 import { Badge, Button, GlassCard } from "@/components/ui";
-import { useProject } from "@/hooks";
+import { useEnvironments, useProject } from "@/hooks";
 import { APIKey, dashboardApi } from "@/lib/api";
-import { IconCheck, IconKey, IconPlus, IconX } from "@tabler/icons-react";
+import { IconCheck, IconCircleFilled, IconKey, IconPlus, IconX } from "@tabler/icons-react";
 import { usePermit } from "@permitdev/react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -19,7 +19,9 @@ export default function APIKeysPage() {
   const [error, setError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyEnvId, setNewKeyEnvId] = useState("");
   const [creating, setCreating] = useState(false);
+  const { environments } = useEnvironments(projectId);
   const [newKey, setNewKey] = useState<{ clientId: string; clientSecret: string } | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
 
@@ -45,9 +47,10 @@ export default function APIKeysPage() {
     if (!newKeyName.trim()) return;
     try {
       setCreating(true);
-      const res = await dashboardApi.createAPIKey(token!, projectId, newKeyName);
+      const res = await dashboardApi.createAPIKey(token!, projectId, newKeyName, newKeyEnvId || undefined);
       setNewKey({ clientId: res.clientId, clientSecret: res.clientSecret });
       setNewKeyName("");
+      setNewKeyEnvId("");
       setShowCreate(false);
       loadKeys();
     } catch {
@@ -129,12 +132,22 @@ export default function APIKeysPage() {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+              className="flex-1 min-w-[200px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
             />
+            <select
+              value={newKeyEnvId}
+              onChange={(e) => setNewKeyEnvId(e.target.value)}
+              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+            >
+              <option value="">Default environment</option>
+              {environments.map((env) => (
+                <option key={env.id} value={env.id}>{env.name}</option>
+              ))}
+            </select>
             <Button isLoading={creating} disabled={!newKeyName.trim()} onClick={handleCreate}>
               Create
             </Button>
-            <Button variant="ghost" onClick={() => { setShowCreate(false); setNewKeyName(""); }}>
+            <Button variant="ghost" onClick={() => { setShowCreate(false); setNewKeyName(""); setNewKeyEnvId(""); }}>
               Cancel
             </Button>
           </div>
@@ -148,6 +161,7 @@ export default function APIKeysPage() {
             <thead>
               <tr className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">Environment</th>
                 <th className="px-6 py-4">Client ID</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Last Used</th>
@@ -158,15 +172,15 @@ export default function APIKeysPage() {
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">Loading...</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-400">Loading...</td>
                 </tr>
               ) : error && keys.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-red-500">{error}</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-red-500">{error}</td>
                 </tr>
               ) : keys.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
                       <IconKey className="w-8 h-8 text-slate-400" />
                     </div>
@@ -182,6 +196,14 @@ export default function APIKeysPage() {
                   <tr key={key.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <span className="text-sm font-bold text-slate-800">{key.name}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {key.environmentName && (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                          <IconCircleFilled className="w-2 h-2" style={{ color: key.environmentName.toLowerCase().includes("production") ? "#10b981" : key.environmentName.toLowerCase().includes("staging") ? "#f59e0b" : "#6b7280" }} />
+                          {key.environmentName}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <code className="text-xs text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded">{key.clientId}</code>

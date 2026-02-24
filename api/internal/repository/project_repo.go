@@ -36,7 +36,8 @@ type ProjectRepository interface {
 	ListAuthLogs(ctx context.Context, input models.ListAuthLogsInput) (*models.ListAuthLogsOutput, error)
 	GetDashboardStats(ctx context.Context, ownerID string) (*models.DashboardStats, error)
 	GetUserStats(ctx context.Context, ownerID string) (*models.UserStats, error)
-	UpsertProjectUser(ctx context.Context, projectID, userID, provider string) error
+	UpsertProjectUser(ctx context.Context, projectID, environmentID, userID, provider string) error
+	DeleteProject(ctx context.Context, projectID string) error
 }
 
 type postgresProjectRepo struct {
@@ -125,10 +126,10 @@ func (r *postgresProjectRepo) UpdateWidget(ctx context.Context, w *models.Widget
 
 func (r *postgresProjectRepo) CreateAPIKey(ctx context.Context, key *models.APIKey) error {
 	query := `
-		INSERT INTO project_api_keys (id, project_id, name, client_id, client_secret_hash, created_at)
-		VALUES ($1, $2, $3, $4, $5, NOW())
+		INSERT INTO project_api_keys (id, project_id, environment_id, name, client_id, client_secret_hash, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, NOW())
 	`
-	_, err := r.db.Exec(ctx, query, key.ID, key.ProjectID, key.Name, key.ClientID, key.ClientSecretHash)
+	_, err := r.db.Exec(ctx, query, key.ID, key.ProjectID, key.EnvironmentID, key.Name, key.ClientID, key.ClientSecretHash)
 	return err
 }
 
@@ -407,9 +408,11 @@ func (r *postgresProjectRepo) GetAllProjectUsers(ctx context.Context, ownerID st
 
 func (r *postgresProjectRepo) GetAPIKeysByProjectID(ctx context.Context, projectID string) ([]models.APIKeyInfo, error) {
 	query := `
-		SELECT id, name, client_id, client_secret_hash, last_used_at, created_at
-		FROM project_api_keys WHERE project_id = $1
-		ORDER BY created_at DESC
+		SELECT k.id, k.name, k.client_id, k.client_secret_hash, k.last_used_at, k.created_at, COALESCE(e.name, '') as env_name
+		FROM project_api_keys k
+		LEFT JOIN environments e ON e.id = k.environment_id
+		WHERE k.project_id = $1
+		ORDER BY k.created_at DESC
 	`
 	rows, err := r.db.Query(ctx, query, projectID)
 	if err != nil {
@@ -423,7 +426,7 @@ func (r *postgresProjectRepo) GetAPIKeysByProjectID(ctx context.Context, project
 		var secretHash string
 		var createdAt time.Time
 		var lastUsed *time.Time
-		if err := rows.Scan(&k.ID, &k.Name, &k.ClientID, &secretHash, &lastUsed, &createdAt); err != nil {
+		if err := rows.Scan(&k.ID, &k.Name, &k.ClientID, &secretHash, &lastUsed, &createdAt, &k.EnvironmentName); err != nil {
 			return nil, err
 		}
 		// Mask the secret
@@ -528,7 +531,7 @@ func (r *postgresProjectRepo) ListAuthLogs(ctx context.Context, input models.Lis
 	// Data query
 	offset := (input.Page - 1) * input.Limit
 	dataQuery := fmt.Sprintf(`
-		SELECT al.id, al.event_type, al.user_email, al.project_id, p.name, al.status, COALESCE(al.ip_address, ''), al.created_at
+		SELECT al.id, al.event_type, al.user_email, al.project_id, p.name, al.status, COALESCE(al.metadata->>'provider', 'email'), COALESCE(al.ip_address, ''), al.created_at
 		FROM auth_logs al
 		JOIN projects p ON al.project_id = p.id
 		WHERE p.owner_id = $1 %s
@@ -538,7 +541,7 @@ func (r *postgresProjectRepo) ListAuthLogs(ctx context.Context, input models.Lis
 
 	if input.ProjectID != "" {
 		dataQuery = fmt.Sprintf(`
-			SELECT al.id, al.event_type, al.user_email, al.project_id, p.name, al.status, COALESCE(al.ip_address, ''), al.created_at
+			SELECT al.id, al.event_type, al.user_email, al.project_id, p.name, al.status, COALESCE(al.metadata->>'provider', 'email'), COALESCE(al.ip_address, ''), al.created_at
 			FROM auth_logs al
 			JOIN projects p ON al.project_id = p.id
 			WHERE p.owner_id = $1 AND al.project_id = $%d %s
@@ -565,7 +568,7 @@ func (r *postgresProjectRepo) ListAuthLogs(ctx context.Context, input models.Lis
 	for rows.Next() {
 		var l models.AuthLogResponse
 		var createdAt time.Time
-		if err := rows.Scan(&l.ID, &l.EventType, &l.UserEmail, &l.ProjectID, &l.ProjectName, &l.Status, &l.IPAddress, &createdAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.EventType, &l.UserEmail, &l.ProjectID, &l.ProjectName, &l.Status, &l.AuthProvider, &l.IPAddress, &createdAt); err != nil {
 			return nil, err
 		}
 		l.Timestamp = createdAt.Format(time.RFC3339)
@@ -738,16 +741,16 @@ func (r *postgresProjectRepo) GetUserStats(ctx context.Context, ownerID string) 
 	return stats, nil
 }
 
-func (r *postgresProjectRepo) UpsertProjectUser(ctx context.Context, projectID, userID, provider string) error {
+func (r *postgresProjectRepo) UpsertProjectUser(ctx context.Context, projectID, environmentID, userID, provider string) error {
 	query := `
-		INSERT INTO project_users (user_id, project_id, last_login, login_count, last_auth_provider, created_at)
-		VALUES ($1, $2, NOW(), 1, $3, NOW())
-		ON CONFLICT (user_id, project_id) DO UPDATE SET
+		INSERT INTO project_users (user_id, project_id, environment_id, last_login, login_count, last_auth_provider, created_at)
+		VALUES ($1, $2, $3, NOW(), 1, $4, NOW())
+		ON CONFLICT (user_id, environment_id) DO UPDATE SET
 			last_login = NOW(),
 			login_count = project_users.login_count + 1,
-			last_auth_provider = $3
+			last_auth_provider = $4
 	`
-	_, err := r.db.Exec(ctx, query, userID, projectID, provider)
+	_, err := r.db.Exec(ctx, query, userID, projectID, environmentID, provider)
 	return err
 }
 
@@ -764,4 +767,34 @@ func formatCount(n int) string {
 	}
 	v := float64(n) / 1000000
 	return fmt.Sprintf("%.1fM", v)
+}
+
+func (r *postgresProjectRepo) DeleteProject(ctx context.Context, projectID string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Delete in dependency order
+	queries := []string{
+		`DELETE FROM oauth_authorization_codes WHERE environment_id IN (SELECT id FROM environments WHERE project_id = $1)`,
+		`DELETE FROM oauth_states WHERE environment_id IN (SELECT id FROM environments WHERE project_id = $1)`,
+		`DELETE FROM oauth_provider_configs WHERE environment_id IN (SELECT id FROM environments WHERE project_id = $1)`,
+		`DELETE FROM auth_logs WHERE project_id = $1`,
+		`DELETE FROM otp_codes WHERE project_id = $1`,
+		`DELETE FROM project_users WHERE project_id = $1`,
+		`DELETE FROM project_api_keys WHERE project_id = $1`,
+		`DELETE FROM widgets WHERE project_id = $1`,
+		`DELETE FROM environments WHERE project_id = $1`,
+		`DELETE FROM projects WHERE id = $1`,
+	}
+
+	for _, q := range queries {
+		if _, err := tx.Exec(ctx, q, projectID); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
 }

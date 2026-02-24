@@ -2,10 +2,11 @@
 
 import { ProjectTabs } from "@/components/layout/ProjectTabs";
 import { Button, GlassCard, Toggle } from "@/components/ui";
-import { useProject, useWidget } from "@/hooks";
-import { IconKey, IconMail } from "@tabler/icons-react";
+import { useOAuthProviders, useProject, useSelectedEnvironment, useWidget } from "@/hooks";
+import { IconBrandGithub, IconBrandGoogle, IconMail } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type Tab = "design" | "methods" | "advanced" | "integration";
 
@@ -13,6 +14,8 @@ export default function CustomizePage() {
   const { id } = useParams<{ id: string }>();
   const { project } = useProject(id);
   const { widget, isLoading, updateWidget } = useWidget(id);
+  const { envId, environment } = useSelectedEnvironment(id);
+  const { providers, upsertProvider } = useOAuthProviders(id, envId);
 
   const [tab, setTab] = useState<Tab>("design");
   const [title, setTitle] = useState("");
@@ -23,7 +26,6 @@ export default function CustomizePage() {
   const [privacyUrl, setPrivacyUrl] = useState("");
   const [showBadge, setShowBadge] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (widget) {
@@ -39,8 +41,8 @@ export default function CustomizePage() {
 
   const handleSave = async () => {
     setSaving(true);
-    setSaved(false);
     try {
+      const enabledProviders = ["email", ...providers.filter((p) => p.enabled).map((p) => p.provider)];
       await updateWidget.mutateAsync({
         title,
         subtitle,
@@ -51,14 +53,57 @@ export default function CustomizePage() {
           privacyUrl,
           showSecuredBadge: showBadge,
         },
-        enabledProviders: ["email"],
+        enabledProviders,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success("Changes saved");
+    } catch {
+      toast.error("Failed to save changes");
     } finally {
       setSaving(false);
     }
   };
+
+  const [credentialInputs, setCredentialInputs] = useState<Record<string, { clientId: string; clientSecret: string }>>({});
+  const [pendingEnable, setPendingEnable] = useState<Record<string, boolean>>({});
+
+  const isDev = environment?.type === "development";
+
+  const handleToggleProvider = (provider: string, enabled: boolean) => {
+    if (enabled && !isDev) {
+      // For non-dev environments, show credential form instead of sending request
+      setPendingEnable((prev) => ({ ...prev, [provider]: true }));
+      return;
+    }
+    if (!enabled) {
+      setPendingEnable((prev) => ({ ...prev, [provider]: false }));
+    }
+    upsertProvider.mutate({ provider, enabled }, {
+      onError: () => toast.error(`Failed to update ${provider} provider`),
+    });
+  };
+
+  const handleSaveCredentials = (provider: string) => {
+    const creds = credentialInputs[provider];
+    if (!creds?.clientId || !creds?.clientSecret) return;
+    upsertProvider.mutate({
+      provider,
+      clientId: creds.clientId,
+      clientSecret: creds.clientSecret,
+      enabled: true,
+    }, {
+      onSuccess: () => {
+        setPendingEnable((prev) => ({ ...prev, [provider]: false }));
+        setCredentialInputs((prev) => ({ ...prev, [provider]: { clientId: "", clientSecret: "" } }));
+        toast.success(`${provider} credentials saved`);
+      },
+      onError: () => toast.error(`Failed to save ${provider} credentials`),
+    });
+  };
+
+  const oauthProviders = [
+    { key: "google", label: "Google", desc: "Sign in with Google", icon: IconBrandGoogle },
+    { key: "github", label: "GitHub", desc: "Sign in with GitHub", icon: IconBrandGithub },
+  ];
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "design", label: "Design" },
@@ -107,7 +152,7 @@ export default function CustomizePage() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Sign in to Your App"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div>
@@ -117,7 +162,7 @@ export default function CustomizePage() {
                         value={subtitle}
                         onChange={(e) => setSubtitle(e.target.value)}
                         placeholder="Welcome! Please sign in to continue."
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div>
@@ -144,7 +189,7 @@ export default function CustomizePage() {
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
                         placeholder="https://yourapp.com/logo.png"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                   </div>
@@ -153,7 +198,12 @@ export default function CustomizePage() {
 
               {tab === "methods" && (
                 <GlassCard>
-                  <h3 className="text-lg font-bold text-slate-800 mb-6">Auth Methods</h3>
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">Auth Methods</h3>
+                  {environment && (
+                    <p className="text-xs text-slate-400 mb-6">
+                      Environment: {environment.name}
+                    </p>
+                  )}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                       <div className="flex items-center gap-4">
@@ -168,24 +218,86 @@ export default function CustomizePage() {
                       <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">Always On</span>
                     </div>
 
-                    {[
-                      { label: "Google SSO", desc: "Sign in with Google" },
-                      { label: "GitHub SSO", desc: "Sign in with GitHub" },
-                      { label: "Apple SSO", desc: "Sign in with Apple" },
-                    ].map((provider) => (
-                      <div key={provider.label} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl opacity-60">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
-                            <IconKey className="w-5 h-5 text-slate-400" />
+                    {oauthProviders.map((provider) => {
+                      const config = providers.find((p) => p.provider === provider.key);
+                      const isEnabled = config?.enabled ?? false;
+                      const isPending = pendingEnable[provider.key] ?? false;
+                      const showToggleOn = isEnabled || isPending;
+                      const Icon = provider.icon;
+                      const creds = credentialInputs[provider.key] || { clientId: "", clientSecret: "" };
+                      const showCredForm = !isDev && (isPending || (isEnabled && !config?.isShared));
+                      return (
+                        <div key={provider.key} className="p-4 bg-slate-50 rounded-xl space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
+                                <Icon className="w-5 h-5 text-slate-400" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800">{provider.label}</p>
+                                <p className="text-xs text-slate-400">{provider.desc}</p>
+                                {isEnabled && config?.isShared && (
+                                  <p className="text-xs text-blue-500 mt-0.5">Using shared dev credentials</p>
+                                )}
+                                {isEnabled && !config?.isShared && config?.clientId && (
+                                  <p className="text-xs text-emerald-500 mt-0.5">Using custom credentials</p>
+                                )}
+                              </div>
+                            </div>
+                            <Toggle
+                              enabled={showToggleOn}
+                              disabled={upsertProvider.isPending}
+                              onChange={(newVal) => handleToggleProvider(provider.key, newVal)}
+                            />
                           </div>
-                          <div>
-                            <p className="font-medium text-slate-800">{provider.label}</p>
-                            <p className="text-xs text-slate-400">{provider.desc}</p>
-                          </div>
+                          {showCredForm && (
+                            <div className="pl-14 space-y-2">
+                              <p className="text-xs font-medium text-slate-500">
+                                {isPending ? "Enter your credentials to enable" : "Update credentials"}
+                              </p>
+                              <input
+                                type="text"
+                                placeholder="Client ID"
+                                value={creds.clientId}
+                                onChange={(e) => setCredentialInputs((prev) => ({
+                                  ...prev,
+                                  [provider.key]: { ...prev[provider.key], clientId: e.target.value, clientSecret: prev[provider.key]?.clientSecret || "" },
+                                }))}
+                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none"
+                              />
+                              <input
+                                type="password"
+                                placeholder="Client Secret"
+                                value={creds.clientSecret}
+                                onChange={(e) => setCredentialInputs((prev) => ({
+                                  ...prev,
+                                  [provider.key]: { ...prev[provider.key], clientSecret: e.target.value, clientId: prev[provider.key]?.clientId || "" },
+                                }))}
+                                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none"
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  disabled={!creds.clientId || !creds.clientSecret || upsertProvider.isPending}
+                                  onClick={() => handleSaveCredentials(provider.key)}
+                                >
+                                  Save Credentials
+                                </Button>
+                                {isPending && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setPendingEnable((prev) => ({ ...prev, [provider.key]: false }))}
+                                  >
+                                    Cancel
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Coming Soon</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </GlassCard>
               )}
@@ -201,7 +313,7 @@ export default function CustomizePage() {
                         value={termsUrl}
                         onChange={(e) => setTermsUrl(e.target.value)}
                         placeholder="https://yourapp.com/terms"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div>
@@ -211,7 +323,7 @@ export default function CustomizePage() {
                         value={privacyUrl}
                         onChange={(e) => setPrivacyUrl(e.target.value)}
                         placeholder="https://yourapp.com/privacy"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[var(--accent)] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-200 focus:border-[var(--accent)] transition-all"
                       />
                     </div>
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
@@ -251,9 +363,6 @@ export default function CustomizePage() {
                   <Button isLoading={saving} onClick={handleSave}>
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
-                  {saved && (
-                    <span className="text-sm font-medium text-emerald-600">Saved!</span>
-                  )}
                 </div>
               )}
             </>

@@ -21,6 +21,8 @@ interface PermitConfig {
 
 interface PermitProviderProps {
   projectId: string;
+  /** Path for the SSO callback route in the client app, e.g. "/sso-callback" */
+  ssoCallbackUrl?: string;
   config?: PermitConfig;
   children: ReactNode;
 }
@@ -43,6 +45,7 @@ const createQueryClient = () =>
 
 export const PermitProvider = ({
   projectId,
+  ssoCallbackUrl = "/sso-callback",
   config = {},
   children,
 }: PermitProviderProps) => {
@@ -55,6 +58,7 @@ export const PermitProvider = ({
     <QueryClientProvider client={queryClient}>
       <PermitProviderInner
         projectId={projectId}
+        ssoCallbackUrl={ssoCallbackUrl}
         apiUrl={apiUrl}
         disableShadowDOM={disableShadowDOM}
       >
@@ -66,6 +70,7 @@ export const PermitProvider = ({
 
 interface PermitProviderInnerProps {
   projectId: string;
+  ssoCallbackUrl: string;
   apiUrl: string;
   disableShadowDOM: boolean;
   children: ReactNode;
@@ -73,6 +78,7 @@ interface PermitProviderInnerProps {
 
 const PermitProviderInner = ({
   projectId,
+  ssoCallbackUrl,
   apiUrl,
   disableShadowDOM,
   children,
@@ -142,6 +148,7 @@ const PermitProviderInner = ({
         configError,
         apiUrl,
         projectId,
+        ssoCallbackUrl,
       }}
     >
       {children}

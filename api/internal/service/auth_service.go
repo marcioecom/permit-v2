@@ -25,6 +25,7 @@ type AuthService struct {
 	otpRepo      repository.OTPCodeRepository
 	identityRepo repository.IdentityRepository
 	projectRepo  repository.ProjectRepository
+	envRepo      repository.EnvironmentRepository
 }
 
 func NewAuthService(
@@ -34,6 +35,7 @@ func NewAuthService(
 	otpRepo repository.OTPCodeRepository,
 	identityRepo repository.IdentityRepository,
 	projectRepo repository.ProjectRepository,
+	envRepo repository.EnvironmentRepository,
 ) *AuthService {
 	return &AuthService{
 		jwtService:   jwtService,
@@ -42,6 +44,7 @@ func NewAuthService(
 		otpRepo:      otpRepo,
 		identityRepo: identityRepo,
 		projectRepo:  projectRepo,
+		envRepo:      envRepo,
 	}
 }
 
@@ -87,12 +90,18 @@ func (s *AuthService) CreateOTPCode(ctx context.Context, input CreateAuthInput) 
 	}
 	code := strings.Join(digits, "")
 
+	env, err := s.envRepo.GetDefaultForProject(ctx, input.ProjectID)
+	if err != nil || env == nil {
+		return fmt.Errorf("environment_not_found")
+	}
+
 	err = s.otpRepo.Create(ctx, &models.OTPCode{
-		ID:        ulid.Make().String(),
-		UserID:    userID,
-		ProjectID: input.ProjectID,
-		Code:      code,
-		ExpiresAt: time.Now().Add(time.Minute * 10),
+		ID:            ulid.Make().String(),
+		UserID:        userID,
+		ProjectID:     input.ProjectID,
+		EnvironmentID: env.ID,
+		Code:          code,
+		ExpiresAt:     time.Now().Add(time.Minute * 10),
 	})
 	if err != nil {
 		return err
@@ -140,7 +149,7 @@ type UserInfo struct {
 	Email string `json:"email"`
 }
 
-func (s *AuthService) logAuthEvent(ctx context.Context, projectID, userID, email, eventType, status, ip, ua string) {
+func (s *AuthService) logAuthEvent(ctx context.Context, projectID, userID, email, eventType, status, ip, ua string, metadata map[string]string) {
 	err := s.projectRepo.InsertAuthLog(ctx, &models.AuthLog{
 		ID:        ulid.Make().String(),
 		ProjectID: projectID,
@@ -150,6 +159,7 @@ func (s *AuthService) logAuthEvent(ctx context.Context, projectID, userID, email
 		Status:    status,
 		IPAddress: ip,
 		UserAgent: ua,
+		Metadata:  metadata,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {
@@ -161,19 +171,19 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 	otp, err := s.otpRepo.GetByProjectAndCode(ctx, input.ProjectID, input.Code)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			s.logAuthEvent(ctx, input.ProjectID, "", "", "login", "FAILED", input.IPAddress, input.UserAgent)
+			s.logAuthEvent(ctx, input.ProjectID, "", "", "login", "FAILED", input.IPAddress, input.UserAgent, map[string]string{"provider": "email"})
 			return nil, fmt.Errorf("invalid_code")
 		}
 		return nil, err
 	}
 
 	if otp.UsedAt != nil {
-		s.logAuthEvent(ctx, input.ProjectID, otp.UserID, "", "login", "FAILED", input.IPAddress, input.UserAgent)
+		s.logAuthEvent(ctx, input.ProjectID, otp.UserID, "", "login", "FAILED", input.IPAddress, input.UserAgent, map[string]string{"provider": "email"})
 		return nil, fmt.Errorf("code_already_used")
 	}
 
 	if time.Now().After(otp.ExpiresAt) {
-		s.logAuthEvent(ctx, input.ProjectID, otp.UserID, "", "login", "EXPIRED", input.IPAddress, input.UserAgent)
+		s.logAuthEvent(ctx, input.ProjectID, otp.UserID, "", "login", "EXPIRED", input.IPAddress, input.UserAgent, map[string]string{"provider": "email"})
 		return nil, fmt.Errorf("code_expired")
 	}
 
@@ -198,7 +208,7 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 		}
 	}
 
-	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, input.ProjectID, "email")
+	accessToken, err := s.jwtService.SignAccessToken(user.Email, user.ID, input.ProjectID, otp.EnvironmentID, "email")
 	if err != nil {
 		return nil, fmt.Errorf("token_generation_failed")
 	}
@@ -209,11 +219,11 @@ func (s *AuthService) VerifyOTPCode(ctx context.Context, input VerifyAuthInput) 
 	}
 
 	// Upsert project_users to track login count and last_login
-	if err := s.projectRepo.UpsertProjectUser(ctx, input.ProjectID, user.ID, "email"); err != nil {
+	if err := s.projectRepo.UpsertProjectUser(ctx, input.ProjectID, otp.EnvironmentID, user.ID, "email"); err != nil {
 		log.Warn().Err(err).Str("userId", user.ID).Str("projectId", input.ProjectID).Msg("failed to upsert project user")
 	}
 
-	s.logAuthEvent(ctx, input.ProjectID, user.ID, user.Email, "login", "SUCCESS", input.IPAddress, input.UserAgent)
+	s.logAuthEvent(ctx, input.ProjectID, user.ID, user.Email, "login", "SUCCESS", input.IPAddress, input.UserAgent, map[string]string{"provider": "email"})
 
 	return &VerifyAuthOutput{
 		AccessToken:  accessToken,

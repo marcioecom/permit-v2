@@ -14,6 +14,7 @@ type Handlers struct {
 	Project   *ProjectHandler
 	JWKS      *JWKSHandler
 	Dashboard *DashboardHandler
+	OAuth     *OAuthHandler
 }
 
 type Services struct {
@@ -24,6 +25,9 @@ type Services struct {
 func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 	r.Get("/health", h.Health.GetHealth)
 	r.Get("/.well-known/jwks.json", h.JWKS.GetJWKS)
+
+	// OAuth callback from providers (Google/GitHub redirect here)
+	r.Get("/oauth/callback", h.OAuth.Callback)
 
 	corsMiddleware := middleware.NewCORSMiddleware(services.ProjectRepo)
 	otpRateLimiter := middleware.RateLimitMiddleware(middleware.OTPLimiter, middleware.IPKeyExtractor)
@@ -40,6 +44,10 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 
 			r.Post("/refresh", h.Session.Refresh)
 			r.With(authMiddleware.RequireAuth).Post("/logout", h.Session.Logout)
+
+			// OAuth endpoints
+			r.Post("/oauth/authorize", h.OAuth.Authorize)
+			r.Post("/oauth/token", h.OAuth.ExchangeToken)
 		})
 
 		r.Route("/projects", func(r chi.Router) {
@@ -61,6 +69,7 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 
 			r.Get("/projects", h.Dashboard.ListProjects)
 			r.Get("/projects/{id}", h.Dashboard.GetProject)
+			r.Delete("/projects/{id}", h.Dashboard.DeleteProject)
 			r.Get("/projects/{id}/users", h.Dashboard.ListProjectUsers)
 			r.Get("/projects/{id}/api-keys", h.Dashboard.ListAPIKeys)
 			r.Delete("/projects/{id}/api-keys/{keyId}", h.Dashboard.RevokeAPIKey)
@@ -69,6 +78,21 @@ func SetupRoutes(r *chi.Mux, h *Handlers, services *Services) {
 			r.Get("/logs", h.Dashboard.ListAuthLogs)
 			r.Get("/stats", h.Dashboard.GetDashboardStats)
 			r.Get("/users/stats", h.Dashboard.GetUserStats)
+
+			// Environment management
+			r.Route("/projects/{id}/environments", func(r chi.Router) {
+				r.Get("/", h.Dashboard.ListEnvironments)
+				r.Post("/", h.Dashboard.CreateEnvironment)
+				r.Get("/{envId}", h.Dashboard.GetEnvironment)
+				r.Patch("/{envId}", h.Dashboard.UpdateEnvironment)
+
+				// OAuth provider configs per environment
+				r.Route("/{envId}/oauth-providers", func(r chi.Router) {
+					r.Get("/", h.Dashboard.ListOAuthProviders)
+					r.Put("/", h.Dashboard.UpsertOAuthProvider)
+					r.Delete("/{provider}", h.Dashboard.DeleteOAuthProvider)
+				})
+			})
 		})
 	})
 }

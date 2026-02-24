@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { EnvironmentSwitcher } from "./EnvironmentSwitcher";
 
 interface ProjectTabsProps {
   projectId: string;
@@ -10,6 +11,10 @@ interface ProjectTabsProps {
 
 export function ProjectTabs({ projectId, projectName }: ProjectTabsProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const envParam = searchParams.get("env");
+  const queryString = envParam ? `?env=${envParam}` : "";
 
   const tabs = [
     { href: `/projects/${projectId}`, label: "Overview", exact: true },
@@ -30,6 +35,8 @@ export function ProjectTabs({ projectId, projectName }: ProjectTabsProps) {
         <Link href="/projects" className="hover:text-slate-600 transition-colors">Projects</Link>
         <span>/</span>
         <span className="text-slate-600">{projectName || "..."}</span>
+        <span>/</span>
+        <EnvironmentSwitcher projectId={projectId} />
       </div>
 
       {/* Tabs */}
@@ -37,7 +44,7 @@ export function ProjectTabs({ projectId, projectName }: ProjectTabsProps) {
         {tabs.map((tab) => (
           <Link
             key={tab.href}
-            href={tab.href}
+            href={`${tab.href}${queryString}`}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
               isActive(tab)
                 ? "bg-white text-slate-900 shadow-sm"

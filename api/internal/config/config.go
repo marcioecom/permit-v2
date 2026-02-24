@@ -20,6 +20,13 @@ type Config struct {
 	UseMailHog bool
 	SMTPHost   string
 	SMTPPort   string
+
+	// OAuth shared credentials (used for development environments)
+	OAuthCallbackBaseURL     string
+	SharedGoogleClientID     string `validate:"required"`
+	SharedGoogleClientSecret string `validate:"required"`
+	SharedGitHubClientID     string `validate:"required"`
+	SharedGitHubClientSecret string `validate:"required"`
 }
 
 func Load() (*Config, error) {
@@ -36,6 +43,12 @@ func Load() (*Config, error) {
 		UseMailHog: os.Getenv("USE_MAILHOG") == "true",
 		SMTPHost:   getEnv("SMTP_HOST", "localhost"),
 		SMTPPort:   getEnv("SMTP_PORT", "1025"),
+
+		OAuthCallbackBaseURL:     getEnv("OAUTH_CALLBACK_BASE_URL", "http://localhost:8080"),
+		SharedGoogleClientID:     os.Getenv("PERMIT_SHARED_GOOGLE_CLIENT_ID"),
+		SharedGoogleClientSecret: os.Getenv("PERMIT_SHARED_GOOGLE_CLIENT_SECRET"),
+		SharedGitHubClientID:     os.Getenv("PERMIT_SHARED_GITHUB_CLIENT_ID"),
+		SharedGitHubClientSecret: os.Getenv("PERMIT_SHARED_GITHUB_CLIENT_SECRET"),
 	}
 
 	if err := config.validate(); err != nil {

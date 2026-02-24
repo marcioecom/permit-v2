@@ -12,6 +12,7 @@ export default function RootLayout({
       <body>
         <PermitProvider
           projectId="01KJ0A0G5WN4F396TATZVGMP67"
+          ssoCallbackUrl="/sso-callback"
           config={{ apiUrl: 'http://localhost:8080/api/v1' }}
         >
           {children}

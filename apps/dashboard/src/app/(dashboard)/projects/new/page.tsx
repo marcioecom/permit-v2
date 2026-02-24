@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, GlassCard } from "@/components/ui";
+import { Button, GlassCard, Toggle } from "@/components/ui";
 import { useProjects } from "@/hooks";
 import type { CreateProjectResponse } from "@/lib/api";
-import { IconCheck, IconKey, IconMail } from "@tabler/icons-react";
+import { IconBrandGithub, IconBrandGoogle, IconCheck, IconKey, IconMail } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,8 +13,10 @@ export default function CreateProjectPage() {
   const { createProject } = useProjects();
   const [name, setName] = useState("");
   const [environment, setEnvironment] = useState("development");
-  const [authMethods] = useState({
+  const [authMethods, setAuthMethods] = useState({
     email: true,
+    google: false,
+    github: false,
   });
   const [corsOrigins, setCorsOrigins] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export default function CreateProjectPage() {
           <div className="space-y-4 mb-8">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Project Name</label>
-              <p className="text-slate-800 font-medium">{credentials.name}</p>
+              <p className="text-slate-800 font-medium">{credentials.project.name}</p>
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Client ID</label>
@@ -83,7 +85,7 @@ export default function CreateProjectPage() {
           <Button
             size="lg"
             className="w-full"
-            onClick={() => router.push(`/projects/${credentials.id}`)}
+            onClick={() => router.push(`/projects/${credentials.project.id}`)}
           >
             Go to Project
           </Button>
@@ -180,27 +182,56 @@ export default function CreateProjectPage() {
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">Always On</span>
             </div>
 
-            {[
-              { label: "Google SSO", desc: "Sign in with Google" },
-              { label: "GitHub SSO", desc: "Sign in with GitHub" },
-              { label: "Apple SSO", desc: "Sign in with Apple" },
-            ].map((provider) => (
-              <div
-                key={provider.label}
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-xl opacity-60"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
-                    <IconKey className="w-5 h-5 text-slate-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-800">{provider.label}</p>
-                    <p className="text-xs text-slate-400">{provider.desc}</p>
-                  </div>
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
+                  <IconBrandGoogle className="w-5 h-5 text-slate-400" />
                 </div>
-                <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Coming Soon</span>
+                <div>
+                  <p className="font-medium text-slate-800">Google SSO</p>
+                  <p className="text-xs text-slate-400">Sign in with Google</p>
+                  {authMethods.google && environment === "development" && (
+                    <p className="text-xs text-blue-500 mt-0.5">Uses shared Permit credentials</p>
+                  )}
+                </div>
               </div>
-            ))}
+              <Toggle
+                enabled={authMethods.google}
+                onChange={(enabled) => setAuthMethods((prev) => ({ ...prev, google: enabled }))}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
+                  <IconBrandGithub className="w-5 h-5 text-slate-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-slate-800">GitHub SSO</p>
+                  <p className="text-xs text-slate-400">Sign in with GitHub</p>
+                  {authMethods.github && environment === "development" && (
+                    <p className="text-xs text-blue-500 mt-0.5">Uses shared Permit credentials</p>
+                  )}
+                </div>
+              </div>
+              <Toggle
+                enabled={authMethods.github}
+                onChange={(enabled) => setAuthMethods((prev) => ({ ...prev, github: enabled }))}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl opacity-60">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100">
+                  <IconKey className="w-5 h-5 text-slate-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-slate-800">Apple SSO</p>
+                  <p className="text-xs text-slate-400">Sign in with Apple</p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Coming Soon</span>
+            </div>
           </div>
         </GlassCard>
 

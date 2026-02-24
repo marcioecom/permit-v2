@@ -22,6 +22,8 @@ export interface PermitUser {
   email: string;
   /** Project/app identifier */
   appId: string;
+  /** Environment identifier (present for OAuth-authenticated users) */
+  environmentId?: string;
   /** Auth provider: "email", "google", etc. */
   provider: string;
   /** When the token was issued */
@@ -72,5 +74,6 @@ export interface PermitTokenClaims {
   email: string;
   uid: string;
   pid: string;
+  eid?: string;
   provider: string;
 }

@@ -2,7 +2,7 @@
 
 import { Badge, Button, GlassCard, Pagination } from "@/components/ui";
 import { useAuthLogs, useProjects, type AuthLog } from "@/hooks";
-import { IconAlertTriangle, IconArchive, IconBan, IconCalendar, IconChartBar, IconCode, IconFilter, IconKey, IconLogin, IconRefresh } from "@tabler/icons-react";
+import { IconAlertTriangle, IconArchive, IconBan, IconBrandGithub, IconBrandGoogle, IconCalendar, IconChartBar, IconCode, IconFilter, IconKey, IconLogin, IconMail, IconRefresh } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -173,6 +173,7 @@ export default function LogsPage() {
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">User / Project</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Method</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">IP Address</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Timestamp</th>
@@ -182,11 +183,11 @@ export default function LogsPage() {
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">Loading...</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-400">Loading...</td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">No logs found</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-400">No logs found</td>
                 </tr>
               ) : (
                 logs.map((log) => (
@@ -201,6 +202,18 @@ export default function LogsPage() {
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-slate-700">{log.userEmail}</span>
                         <span className="text-[10px] text-slate-400">{log.projectName}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                        {log.authProvider === "google" ? (
+                          <IconBrandGoogle className="w-3.5 h-3.5" />
+                        ) : log.authProvider === "github" ? (
+                          <IconBrandGithub className="w-3.5 h-3.5" />
+                        ) : (
+                          <IconMail className="w-3.5 h-3.5" />
+                        )}
+                        <span className="capitalize">{log.authProvider || "email"}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">

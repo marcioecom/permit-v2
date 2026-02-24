@@ -1,16 +1,40 @@
 "use client";
 
 import { ProjectTabs } from "@/components/layout";
-import { GlassCard, StatCard } from "@/components/ui";
+import { Button, ConfirmDialog, GlassCard, StatCard } from "@/components/ui";
 import { useProject } from "@/hooks";
-import { IconCalendar, IconClock, IconKey, IconUsers } from "@tabler/icons-react";
+import { dashboardApi } from "@/lib/api";
+import { IconCalendar, IconClock, IconKey, IconTrash, IconUsers } from "@tabler/icons-react";
+import { usePermit } from "@permitdev/react";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function ProjectDetailsPage() {
   const params = useParams();
   const projectId = params.id as string;
   const { project, isLoading, error } = useProject(projectId);
+  const { token } = usePermit();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await dashboardApi.deleteProject(token!, projectId);
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      router.push("/projects");
+    } catch {
+      toast.error("Failed to delete project");
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -95,6 +119,36 @@ export default function ProjectDetailsPage() {
           </GlassCard>
         </Link>
       </div>
+
+      {/* Danger Zone */}
+      <div className="mt-12 border border-red-200 rounded-xl p-6">
+        <h2 className="text-lg font-bold text-red-600 mb-2">Danger Zone</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Permanently delete this project and all associated data (users, API keys, environments, auth logs).
+          This action cannot be undone.
+        </p>
+        <Button
+          variant="danger"
+          icon={<IconTrash className="w-4 h-4" />}
+          disabled={deleting}
+          onClick={() => setShowDeleteDialog(true)}
+        >
+          Delete Project
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onCancel={() => setShowDeleteDialog(false)}
+        onConfirm={handleDelete}
+        title={`Delete "${project.name}"?`}
+        description="This will permanently delete this project and all associated data (users, API keys, environments, auth logs). This action cannot be undone."
+        confirmLabel="Delete Project"
+        cancelLabel="Keep Project"
+        variant="danger"
+        isLoading={deleting}
+        icon={<IconTrash className="w-6 h-6 text-red-500" />}
+      />
     </div>
   );
 }
