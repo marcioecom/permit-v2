@@ -11,6 +11,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <PermitProvider
       projectId={DASHBOARD_PROJECT_ID}
+      ssoCallbackUrl="/sso-callback"
       config={{ apiUrl: API_URL }}
     >
       <QueryClientProvider client={new QueryClient({

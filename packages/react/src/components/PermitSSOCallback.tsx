@@ -39,7 +39,7 @@ export const PermitSSOCallback = ({
       try {
         const response = await oauthExchangeToken(apiUrl, {
           code,
-          environmentId: projectId,
+          environmentId: `env_${projectId}`,
         });
 
         // Store credentials using same localStorage pattern as OTP flow
