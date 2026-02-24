@@ -18,8 +18,8 @@ importers:
   apps/dashboard:
     dependencies:
       '@permitdev/react':
-        specifier: '>=0.3.0'
-        version: 0.3.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: '>=0.4.0'
+        version: 0.4.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@tabler/icons-react':
         specifier: ^3.37.1
         version: 3.37.1(react@19.2.3)
@@ -1189,8 +1189,8 @@ packages:
   '@open-draft/until@2.1.0':
     resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
 
-  '@permitdev/react@0.3.1':
-    resolution: {integrity: sha512-t0TeLantRZ5PySlp2R3ZQmNGdXbjNwMyMw1vsF5QLjEajA1TLAFaJge1DpE5SwoSim7g03vkb2nU7Q4ylEcKKw==}
+  '@permitdev/react@0.4.1':
+    resolution: {integrity: sha512-PwOzlMtWE+MTJ/K28qbYjm9Y8b8WJdKiv4SSzvrnZJB4uydgRKFS3dMpyqDA5ZNqKq9qADEnxFLYdmj0a8ZF/g==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
@@ -5567,7 +5567,7 @@ snapshots:
 
   '@open-draft/until@2.1.0': {}
 
-  '@permitdev/react@0.3.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@permitdev/react@0.4.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-dropdown-menu': 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
